@@ -3,40 +3,62 @@
 <head>
 <meta charset="UTF-8">
 <!-- 카카오톡 썸네일 원본 (1200x630). wedding-og.png / wedding-admin-og.png(?admin) 로 캡처해서 사용 -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<!-- 모바일 청첩장과 같은 분위기: 아이보리 바탕, 올리브 갈색 글자, 금색 포인트, 흩날리는 꽃잎, 명조 글꼴 -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Noto+Serif+KR:wght@400;500;600&display=swap">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   html, body { width: 1200px; height: 630px; overflow: hidden; }
-  body { font-family: 'Pretendard', 'Malgun Gothic', sans-serif; background: #f6f4f1; color: #2b2724; position: relative; }
-  .band { position: absolute; left: 0; top: 0; bottom: 0; width: 28px; background: #9f4a5c; }
-  .ring { position: absolute; right: 90px; top: 50%; transform: translateY(-50%); width: 360px; height: 360px; }
-  .ring span { position: absolute; width: 230px; height: 230px; border-radius: 50%; border: 22px solid #9f4a5c; opacity: .9; }
-  .ring span:first-child { left: 0; top: 40px; }
-  .ring span:last-child { right: 0; top: 90px; border-color: #d9a7b2; }
-  .content { position: absolute; left: 100px; top: 0; bottom: 0; display: flex; flex-direction: column; justify-content: center; width: 640px; }
-  .tag { display: inline-block; align-self: flex-start; font-size: 26px; font-weight: 700; color: #9f4a5c; background: #f6e8eb; border-radius: 10px; padding: 8px 18px; margin-bottom: 26px; }
-  h1 { font-size: 84px; font-weight: 800; letter-spacing: -2px; line-height: 1.12; }
-  p { font-size: 32px; color: #7a716a; margin-top: 26px; line-height: 1.45; font-weight: 500; }
-  body.admin { background: #3f3a36; color: #fff; }
-  body.admin .tag { background: rgba(255,255,255,.12); color: #f3d3da; }
-  body.admin p { color: #d6cfc9; }
-  body.admin .ring span:last-child { border-color: #6b5f58; }
+  body { font-family: 'Noto Serif KR', serif; color: #4b4636; position: relative;
+    background: radial-gradient(ellipse at 50% 45%, #fffdf6 0%, #faf3da 55%, #f4edd6 100%); }
+  .frame { position: absolute; inset: 28px; border: 1.5px solid rgba(165,129,29,.45); }
+  .frame::after { content: ''; position: absolute; inset: 8px; border: 1px solid rgba(165,129,29,.22); }
+  .petals { position: absolute; inset: 0; }
+  .petals i { position: absolute; display: block; border-radius: 60% 40% 60% 40%; background: radial-gradient(circle at 35% 35%, #f3d886, #ddb041 70%); filter: blur(.6px); }
+  .content { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+  .eyebrow { font-family: 'Cormorant Garamond', serif; font-style: italic; font-size: 34px; color: #a5811d; letter-spacing: 2px; }
+  .orn { display: flex; align-items: center; gap: 16px; margin: 18px 0 22px; color: #a5811d; }
+  .orn span { width: 90px; height: 1px; background: linear-gradient(90deg, transparent, #c1b795); }
+  .orn span:last-child { background: linear-gradient(90deg, #c1b795, transparent); }
+  h1 { font-size: 76px; font-weight: 600; letter-spacing: 6px; line-height: 1.2; }
+  p { font-size: 28px; color: #8b8268; margin-top: 26px; letter-spacing: 1px; font-weight: 400; }
+  .tag { margin-top: 34px; font-family: 'Cormorant Garamond', serif; font-size: 22px; letter-spacing: 6px; color: #a5811d; text-transform: uppercase; }
+
+  body.admin { background: radial-gradient(ellipse at 50% 45%, #5a5442 0%, #4b4636 60%, #3d3a2d 100%); color: #faf3da; }
+  body.admin .frame { border-color: rgba(221,176,65,.5); }
+  body.admin .frame::after { border-color: rgba(221,176,65,.25); }
+  body.admin .eyebrow, body.admin .tag, body.admin .orn { color: #ddb041; }
+  body.admin p { color: #c1b795; }
+  body.admin .petals i { opacity: .55 !important; }
 </style>
 </head>
 <body>
-  <div class="band"></div>
+  <div class="petals" id="petals"></div>
+  <div class="frame"></div>
   <div class="content">
-    <span class="tag" id="tag">하객 접수 · 실시간 통계</span>
-    <h1 id="title">결혼식<br>하객 접수</h1>
-    <p id="desc">청첩장 명단, 방문 접수,<br>축의금과 식권을 한곳에서</p>
+    <div class="eyebrow" id="eyebrow">Wedding Day</div>
+    <div class="orn"><span></span>
+      <svg width="34" height="20" viewBox="0 0 34 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="10" r="7.5"/><circle cx="22" cy="10" r="7.5"/></svg>
+    <span></span></div>
+    <h1 id="title">결혼식 하객 접수</h1>
+    <p id="desc">청첩장 명단 · 방문 접수 · 축의금과 식권</p>
+    <div class="tag" id="tag">Guest Reception</div>
   </div>
-  <div class="ring"><span></span><span></span></div>
 <script>
+  // 꽃잎 위치는 고정값 (캡처할 때마다 같은 결과)
+  var P = [[80,90,22,30],[190,520,16,-20],[300,70,12,50],[150,300,10,10],[420,560,18,-40],[1080,110,20,-30],[980,520,24,20],
+           [1120,330,14,60],[880,60,12,-10],[760,575,10,35],[60,430,14,70],[1010,250,10,-50],[520,40,9,15],[680,40,11,-25],[240,170,8,40],[960,400,9,-15]];
+  var box = document.getElementById('petals');
+  P.forEach(function (p, i) {
+    var el = document.createElement('i');
+    el.style.cssText = 'left:' + p[0] + 'px;top:' + p[1] + 'px;width:' + p[2] + 'px;height:' + Math.round(p[2] * 1.25) + 'px;transform:rotate(' + p[3] + 'deg);opacity:' + (0.45 + (i % 4) * 0.12);
+    box.appendChild(el);
+  });
   if (location.search.indexOf('admin') >= 0) {
     document.body.classList.add('admin');
-    document.getElementById('tag').textContent = '관리자 전용';
-    document.getElementById('title').innerHTML = '하객 접수<br>관리자';
-    document.getElementById('desc').innerHTML = '앱 설정, 그룹, 접수 담당자 계정,<br>자료 내보내기';
+    document.getElementById('eyebrow').textContent = 'Wedding Day';
+    document.getElementById('title').textContent = '하객 접수 관리자';
+    document.getElementById('desc').textContent = '앱 설정 · 그룹 · 접수 담당자 · 자료 내보내기';
+    document.getElementById('tag').textContent = 'Admin Only';
   }
 </script>
 </body>
