@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<!-- 카카오톡 썸네일 원본 (1200x630). wedding-og.png / wedding-admin-og.png(?admin) 로 캡처해서 사용 -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1200px; height: 630px; overflow: hidden; }
+  body { font-family: 'Pretendard', 'Malgun Gothic', sans-serif; background: #f6f4f1; color: #2b2724; position: relative; }
+  .band { position: absolute; left: 0; top: 0; bottom: 0; width: 28px; background: #9f4a5c; }
+  .ring { position: absolute; right: 90px; top: 50%; transform: translateY(-50%); width: 360px; height: 360px; }
+  .ring span { position: absolute; width: 230px; height: 230px; border-radius: 50%; border: 22px solid #9f4a5c; opacity: .9; }
+  .ring span:first-child { left: 0; top: 40px; }
+  .ring span:last-child { right: 0; top: 90px; border-color: #d9a7b2; }
+  .content { position: absolute; left: 100px; top: 0; bottom: 0; display: flex; flex-direction: column; justify-content: center; width: 640px; }
+  .tag { display: inline-block; align-self: flex-start; font-size: 26px; font-weight: 700; color: #9f4a5c; background: #f6e8eb; border-radius: 10px; padding: 8px 18px; margin-bottom: 26px; }
+  h1 { font-size: 84px; font-weight: 800; letter-spacing: -2px; line-height: 1.12; }
+  p { font-size: 32px; color: #7a716a; margin-top: 26px; line-height: 1.45; font-weight: 500; }
+  body.admin { background: #3f3a36; color: #fff; }
+  body.admin .tag { background: rgba(255,255,255,.12); color: #f3d3da; }
+  body.admin p { color: #d6cfc9; }
+  body.admin .ring span:last-child { border-color: #6b5f58; }
+</style>
+</head>
+<body>
+  <div class="band"></div>
+  <div class="content">
+    <span class="tag" id="tag">하객 접수 · 실시간 통계</span>
+    <h1 id="title">결혼식<br>하객 접수</h1>
+    <p id="desc">청첩장 명단, 방문 접수,<br>축의금과 식권을 한곳에서</p>
+  </div>
+  <div class="ring"><span></span><span></span></div>
+<script>
+  if (location.search.indexOf('admin') >= 0) {
+    document.body.classList.add('admin');
+    document.getElementById('tag').textContent = '관리자 전용';
+    document.getElementById('title').innerHTML = '하객 접수<br>관리자';
+    document.getElementById('desc').innerHTML = '앱 설정, 그룹, 접수 담당자 계정,<br>자료 내보내기';
+  }
+</script>
+</body>
+</html>
