@@ -188,7 +188,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-<script src="common.js?v=3"></script>
+<script src="common.js?v=4"></script>
 <script>
 var _loaded = { groups: false, guests: false };
 var _tab = 'recv';
@@ -203,6 +203,7 @@ function startApp() {
   $('meRole').textContent = _isMaster ? '마스터' : '접수 담당자';
   $('meAv').textContent = String(_me.email || '?').charAt(0).toUpperCase();
   $('adminCard').classList.toggle('hidden', !_isMaster);
+  applyGroupOrderOnce();
   listen(ROOT + '/settings', function (s) {
     settings = s.val() || {};
     applyTitle();

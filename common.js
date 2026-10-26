@@ -169,6 +169,31 @@ function detachAll() {
   _refs = []; groups = {}; guests = {}; settings = {};
 }
 
+// 그룹 순서를 정해진 순서로 한 번만 맞춤 (마스터 접속 시). 완료 표시는 data/meta 에 남겨 다시 실행되지 않음
+var GROUP_ORDER_V1 = ['CGN', '온누리교회', '숭덕교회', '직장', '친척', '친구', '지인'];
+function applyGroupOrderOnce() {
+  if (!_isMaster) return;
+  var base = ROOT + '/data';
+  _db.ref(base + '/meta/groupOrderV1').once('value').then(function (done) {
+    if (done.val()) return;
+    return _db.ref(base + '/groups').once('value').then(function (s) {
+      var gs = s.val() || {};
+      var ids = Object.keys(gs);
+      if (!ids.length) return;
+      function rank(id) {
+        var n = String(gs[id].name || '').trim();
+        var i = GROUP_ORDER_V1.indexOf(n);
+        if (i >= 0) return i;
+        return n === '기타' ? 2000 : 1000 + (gs[id].order || 0);
+      }
+      ids.sort(function (a, b) { return rank(a) - rank(b); });
+      var up = { 'meta/groupOrderV1': true };
+      ids.forEach(function (id, i) { up['groups/' + id + '/order'] = i + 1; });
+      return _db.ref(base).update(up);
+    });
+  }).catch(function (e) { console.error('group order', e); });
+}
+
 function seedGroups() {
   var up = {};
   DEFAULT_GROUPS.forEach(function (n, i) { up[_db.ref().push().key] = { name: n, order: i + 1 }; });
