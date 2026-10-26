@@ -153,6 +153,21 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13.5px; }
 .dlg .btns { display: flex; gap: 8px; margin-top: 20px; }
 .dlg .btns .b { flex: 1; padding: 11px; }
 
+/* 선택 칸 · 선택 창 */
+.input.pick { text-align: left; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: 36px; font-size: 16px; background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%237a716a' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 13px center; }
+.pick-bg { position: fixed; inset: 0; background: rgba(30,25,22,.42); z-index: 75; display: flex; align-items: flex-end; justify-content: center; }
+@media (min-width: 640px) { .pick-bg { align-items: center; padding: 16px; } }
+.pick-sheet { background: #fff; width: 100%; max-width: 440px; max-height: 75vh; overflow-y: auto; border-radius: 22px 22px 0 0; padding: 10px 12px calc(14px + env(safe-area-inset-bottom)); box-shadow: 0 -10px 40px rgba(0,0,0,.12); }
+.pick-sheet::before { content: ''; display: block; width: 40px; height: 4px; border-radius: 4px; background: var(--line); margin: 0 auto 12px; }
+@media (min-width: 640px) { .pick-sheet { border-radius: 20px; padding-top: 18px; } .pick-sheet::before { display: none; } }
+.pick-sheet h3 { font-size: 16px; font-weight: 800; padding: 0 10px 10px; }
+.pick-sheet ul { list-style: none; }
+.pick-sheet li { display: flex; align-items: center; justify-content: space-between; padding: 14px 12px; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; }
+.pick-sheet li:hover { background: #faf8f6; }
+.pick-sheet li svg { color: var(--accent); visibility: hidden; flex-shrink: 0; }
+.pick-sheet li.on { background: var(--accent-soft); color: var(--accent-dark); font-weight: 800; }
+.pick-sheet li.on svg { visibility: visible; }
+
 /* 설정 탭 */
 .me { display: flex; align-items: center; gap: 12px; }
 .me .av { width: 42px; height: 42px; border-radius: 50%; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 17px; flex-shrink: 0; }

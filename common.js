@@ -78,6 +78,52 @@ function ask(title, msg, okLabel, danger) {
 }
 function notice(title, msg) { return ask(title, msg, null); }
 
+/* ---------- 선택 칸 (휴대폰 기본 선택 창 대신 앱 디자인의 선택 창) ---------- */
+// 원래 <select>는 숨겨 두고 값 저장용으로 그대로 사용 — 기존 코드의 .value / onchange 가 그대로 동작
+var _selValue = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value');
+function prettySelect(sel) {
+  var btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'input pick' + (sel.classList.contains('grow') ? ' grow' : '');
+  btn.style.cssText = sel.style.cssText;
+  sel.parentNode.insertBefore(btn, sel);
+  sel.classList.add('hidden');
+  function sync() { var o = sel.options[sel.selectedIndex]; btn.textContent = o ? o.text : ''; }
+  Object.defineProperty(sel, 'value', {
+    get: function () { return _selValue.get.call(sel); },
+    set: function (v) { _selValue.set.call(sel, v); sync(); }
+  });
+  new MutationObserver(sync).observe(sel, { childList: true });
+  btn.onclick = function () { openPicker(sel, sync); };
+  sync();
+}
+function openPicker(sel, sync) {
+  if (!$('pickBg')) {
+    var el = document.createElement('div');
+    el.id = 'pickBg'; el.className = 'pick-bg hidden';
+    el.innerHTML = '<div class="pick-sheet"><h3 id="pickTitle"></h3><ul id="pickList"></ul></div>';
+    el.onclick = function (e) { if (e.target === el) el.classList.add('hidden'); };
+    document.body.appendChild(el);
+  }
+  $('pickTitle').textContent = sel.getAttribute('data-title') || '선택';
+  var cur = _selValue.get.call(sel);
+  $('pickList').innerHTML = Array.prototype.map.call(sel.options, function (o, i) {
+    return '<li data-i="' + i + '" class="' + (o.value === cur ? 'on' : '') + '"><span>' + esc(o.text) + '</span>' +
+      '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></li>';
+  }).join('');
+  Array.prototype.forEach.call($('pickList').children, function (li) {
+    li.onclick = function () {
+      _selValue.set.call(sel, sel.options[+li.getAttribute('data-i')].value);
+      sync();
+      $('pickBg').classList.add('hidden');
+      sel.dispatchEvent(new Event('change'));
+    };
+  });
+  $('pickBg').classList.remove('hidden');
+  var on = $('pickList').querySelector('.on');
+  if (on) on.scrollIntoView({ block: 'center' });
+}
+
 /* ---------- 로그인 ---------- */
 // opts.masterOnly: 마스터만 들어올 수 있는 페이지
 // opts.onStart(): 접근이 확인된 뒤 호출
