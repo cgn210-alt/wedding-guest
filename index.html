@@ -467,7 +467,7 @@ function renderStats() {
   var t = calcTotals();
   $('kpis').innerHTML = [
     ['청첩장 배포', t.invited + '명', ''],
-    ['그중 방문', t.invVisited + '명', '방문율 ' + pct(t.invVisited, t.invited) + ' · 미방문 ' + (t.invited - t.invVisited) + '명'],
+    ['청첩장 받고 방문', t.invVisited + '명', '방문율 ' + pct(t.invVisited, t.invited) + ' · 미방문 ' + (t.invited - t.invVisited) + '명'],
     ['명단 외 방문', t.walk + '명', ''],
     ['총 방문', t.visited + '명', ''],
     ['축의금 합계', won(t.gift), '낸 사람 ' + t.giftCount + '명', 'wide'],
