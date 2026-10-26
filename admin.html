@@ -8,8 +8,85 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
 <link rel="stylesheet" href="style.css?v=1">
 <style>
-  body { padding-bottom: 24px; }
-  .top { background: #3f3a36; }
+  body { padding-bottom: 40px; background: #f7f6f4; }
+
+  /* 상단 */
+  .ad-top { position: sticky; top: 0; z-index: 20; background: rgba(255,255,255,.92); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
+  .ad-top .in { max-width: 720px; margin: 0 auto; padding: 14px 16px; display: flex; align-items: center; gap: 10px; }
+  .ad-top h1 { font-size: 17px; font-weight: 800; letter-spacing: -0.3px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ad-pill { font-size: 11.5px; font-weight: 700; color: var(--accent); background: var(--accent-soft); border-radius: 999px; padding: 3px 9px; flex-shrink: 0; }
+  .ad-top a { margin-left: auto; flex-shrink: 0; font-size: 13.5px; font-weight: 600; color: var(--sub); text-decoration: none; padding: 7px 12px; border: 1px solid var(--line); border-radius: 999px; background: #fff; }
+
+  .ad-wrap { max-width: 720px; margin: 0 auto; padding: 18px 16px; }
+
+  /* 요약 */
+  .sum { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 18px; }
+  .sum div { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; }
+  .sum b { display: block; font-size: 22px; font-weight: 800; letter-spacing: -0.4px; }
+  .sum span { font-size: 12.5px; color: var(--sub); font-weight: 600; }
+
+  /* 섹션 */
+  .sec { background: #fff; border: 1px solid var(--line); border-radius: 16px; margin-bottom: 16px; overflow: hidden; }
+  .sec-hd { padding: 16px 18px 4px; }
+  .sec-hd h2 { font-size: 15.5px; font-weight: 800; }
+  .sec-hd p { font-size: 13px; color: var(--sub); margin-top: 3px; line-height: 1.5; }
+  .sec-bd { padding: 12px 18px 18px; }
+  .lbl { display: block; font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 7px; }
+  .lbl small { font-weight: 500; color: var(--sub); margin-left: 4px; }
+  .fld { margin-bottom: 18px; }
+  .inp { width: 100%; border: 1px solid var(--line); border-radius: 10px; padding: 11px 13px; background: #fff; color: var(--text); transition: border-color .15s; }
+  .inp:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .b { border: 1px solid var(--line); background: #fff; color: var(--text); border-radius: 10px; padding: 10px 16px; font-weight: 700; font-size: 14px; white-space: nowrap; }
+  .b:hover { background: #faf8f6; }
+  .b.pri { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .b.pri:hover { background: var(--accent-dark); }
+  .b.full { width: 100%; padding: 12px; }
+  .b.ghost { border-color: transparent; background: none; color: var(--sub); padding: 7px 10px; font-size: 13px; }
+  .b.ghost:hover { background: var(--gray-soft); color: var(--text); }
+  .b.ghost.del:hover { background: #fef2f2; color: #b91c1c; }
+  .add-row { display: flex; gap: 8px; }
+  .add-row .inp { flex: 1; min-width: 0; }
+
+  /* 금액 칩 */
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+  .chip { display: inline-flex; align-items: center; gap: 4px; background: var(--accent-soft); color: var(--accent-dark); font-weight: 700; font-size: 14px; border-radius: 999px; padding: 6px 6px 6px 12px; }
+  .chip button { border: 0; background: none; color: var(--accent-dark); width: 22px; height: 22px; border-radius: 50%; font-size: 15px; line-height: 1; opacity: .6; }
+  .chip button:hover { opacity: 1; background: rgba(0,0,0,.06); }
+  .unit { position: relative; flex: 1; }
+  .unit .inp { padding-right: 44px; }
+  .unit span { position: absolute; right: 13px; top: 50%; transform: translateY(-50%); color: var(--sub); font-size: 14px; pointer-events: none; }
+
+  .step { display: inline-flex; align-items: center; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  .step button { width: 44px; height: 42px; border: 0; background: #fff; font-size: 18px; font-weight: 700; color: var(--text); }
+  .step button:hover { background: var(--gray-soft); }
+  .step input { width: 56px; height: 42px; border: 0; border-left: 1px solid var(--line); border-right: 1px solid var(--line); text-align: center; font-size: 16px; font-weight: 700; }
+  .step input:focus { outline: none; }
+
+  /* 행 목록 */
+  .rows { list-style: none; border-top: 1px solid var(--line); }
+  .rows li { display: flex; align-items: center; gap: 10px; padding: 10px 18px; border-bottom: 1px solid var(--line); min-height: 56px; }
+  .rows li:last-child { border-bottom: 0; }
+  .rows .main { flex: 1; min-width: 0; }
+  .rows .nm { font-weight: 700; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .rows .sb { font-size: 12.5px; color: var(--sub); margin-top: 1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .rows .acts { display: flex; gap: 2px; flex-shrink: 0; }
+  .cnt { font-size: 12px; font-weight: 700; color: var(--sub); background: var(--gray-soft); border-radius: 999px; padding: 3px 9px; flex-shrink: 0; }
+  .av { width: 34px; height: 34px; border-radius: 50%; background: var(--accent-soft); color: var(--accent-dark); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; flex-shrink: 0; }
+  .av.m { background: var(--accent); color: #fff; }
+  .rows li.edit .inp { padding: 8px 11px; }
+  .sec-ft { padding: 14px 18px 18px; border-top: 1px solid var(--line); background: #fcfbfa; }
+
+  /* 확인 창 */
+  .dlg-bg { position: fixed; inset: 0; background: rgba(30,25,22,.4); z-index: 70; display: flex; align-items: center; justify-content: center; padding: 16px; }
+  .dlg { background: #fff; border-radius: 16px; width: 100%; max-width: 360px; padding: 22px 20px 18px; box-shadow: 0 20px 50px rgba(0,0,0,.18); }
+  .dlg h3 { font-size: 16.5px; font-weight: 800; margin-bottom: 8px; }
+  .dlg p { font-size: 14px; color: var(--sub); line-height: 1.55; white-space: pre-line; }
+  .dlg .btns { display: flex; gap: 8px; margin-top: 20px; }
+  .dlg .btns .b { flex: 1; padding: 11px; }
+  .dlg .b.red { background: #dc2626; border-color: #dc2626; color: #fff; }
+
+  .foot { text-align: center; margin-top: 8px; }
+  .foot .meinfo { font-size: 12.5px; color: var(--sub); margin-bottom: 10px; }
 </style>
 </head>
 <body data-title-suffix=" 관리자">
@@ -41,61 +118,109 @@
 
 <!-- 앱 -->
 <div id="appScreen" class="hidden">
-  <div class="top">
-    <h1 class="app-title" data-suffix=" 관리자">결혼식 하객 접수 관리자</h1>
-    <div class="mini" id="topMini">불러오는 중…</div>
+  <header class="ad-top">
+    <div class="in">
+      <h1 class="app-title">결혼식 하객 접수</h1>
+      <span class="ad-pill">관리자</span>
+      <a href="index.html">접수 화면</a>
+    </div>
+  </header>
+
+  <div class="ad-wrap">
+    <div class="sum">
+      <div><b id="sumAll">-</b><span>등록</span></div>
+      <div><b id="sumInv">-</b><span>청첩장</span></div>
+      <div><b id="sumVis">-</b><span>방문</span></div>
+    </div>
+
+    <!-- 앱 설정 -->
+    <section class="sec">
+      <div class="sec-hd">
+        <h2>앱 설정</h2>
+        <p>접수 화면에 바로 반영됩니다.</p>
+      </div>
+      <div class="sec-bd">
+        <div class="fld">
+          <label class="lbl" for="sTitle">앱 제목</label>
+          <input id="sTitle" class="inp" placeholder="결혼식 하객 접수">
+        </div>
+        <div class="fld">
+          <label class="lbl">축의금 빠른 버튼 <small>접수할 때 누르는 금액</small></label>
+          <div class="chips" id="quickChips"></div>
+          <div class="add-row">
+            <div class="unit"><input id="newQuick" class="inp" inputmode="numeric" placeholder="금액 추가" onkeydown="if(event.key==='Enter')addQuick()"><span>만원</span></div>
+            <button class="b" onclick="addQuick()">추가</button>
+          </div>
+        </div>
+        <div class="fld" style="margin-bottom:22px">
+          <label class="lbl">기본 식권 매수 <small>접수 창을 열면 처음 채워지는 값</small></label>
+          <div class="step">
+            <button type="button" onclick="stepT(-1)">−</button>
+            <input id="sTickets" inputmode="numeric">
+            <button type="button" onclick="stepT(1)">+</button>
+          </div>
+        </div>
+        <button class="b pri full" onclick="saveSettings()">설정 저장</button>
+      </div>
+    </section>
+
+    <!-- 그룹 -->
+    <section class="sec">
+      <div class="sec-hd">
+        <h2>그룹</h2>
+        <p>사람이 있는 그룹은 삭제할 수 없습니다. 이름을 바꾸면 소속된 사람도 함께 바뀝니다.</p>
+      </div>
+      <ul class="rows" id="groupList" style="margin-top:12px"></ul>
+      <div class="sec-ft">
+        <div class="add-row">
+          <input id="newGroup" class="inp" placeholder="새 그룹 이름" onkeydown="if(event.key==='Enter')addGroup()">
+          <button class="b pri" onclick="addGroup()">추가</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 접수 담당자 -->
+    <section class="sec">
+      <div class="sec-hd">
+        <h2>접수 담당자</h2>
+        <p>여기 등록된 구글 계정만 접수 화면을 열 수 있습니다.</p>
+      </div>
+      <ul class="rows" id="allowedList" style="margin-top:12px"></ul>
+      <div class="sec-ft">
+        <input id="newAllowedEmail" class="inp" type="email" placeholder="구글 이메일 (예: name@gmail.com)" style="margin-bottom:8px">
+        <div class="add-row">
+          <input id="newAllowedName" class="inp" placeholder="이름 (메모용)" onkeydown="if(event.key==='Enter')addAllowed()">
+          <button class="b pri" onclick="addAllowed()">허용</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 내보내기 -->
+    <section class="sec">
+      <div class="sec-hd">
+        <h2>자료 내보내기</h2>
+        <p>전체 명단과 축의금·식권 기록을 엑셀에서 열 수 있는 CSV 파일로 저장합니다.</p>
+      </div>
+      <div class="sec-bd">
+        <button class="b full" onclick="exportCsv()">CSV 파일 저장</button>
+      </div>
+    </section>
+
+    <div class="foot">
+      <div class="meinfo" id="meInfo"></div>
+      <button class="b ghost" onclick="firebase.auth().signOut()">로그아웃</button>
+    </div>
   </div>
+</div>
 
-  <div class="wrap">
-    <div class="card">
-      <h2>앱 설정</h2>
-      <div class="field">
-        <label>앱 제목 (화면 상단과 브라우저 탭에 표시)</label>
-        <input id="sTitle" class="input" placeholder="결혼식 하객 접수">
-      </div>
-      <div class="field">
-        <label>축의금 빠른 버튼 (만원 단위, 쉼표로 구분)</label>
-        <input id="sQuick" class="input" placeholder="3, 5, 10, 20, 30, 50, 100">
-      </div>
-      <div class="field">
-        <label>접수할 때 기본 식권 매수</label>
-        <input id="sTickets" class="input" inputmode="numeric" style="width:100px">
-      </div>
-      <button class="btn primary block" onclick="saveSettings()">저장</button>
-    </div>
-
-    <div class="card">
-      <h2>그룹 관리</h2>
-      <ul class="list" id="groupList"></ul>
-      <div class="row" style="margin-top:10px">
-        <input id="newGroup" class="input grow" placeholder="새 그룹 이름">
-        <button class="btn primary" onclick="addGroup()">추가</button>
-      </div>
-    </div>
-
-    <div class="card">
-      <h2>접수 담당자 계정</h2>
-      <p class="muted" style="margin-bottom:8px">여기 등록된 구글 계정만 접수 화면을 열 수 있습니다.</p>
-      <ul class="list" id="allowedList"></ul>
-      <div class="field" style="margin-top:10px">
-        <input id="newAllowedEmail" class="input" type="email" placeholder="구글 이메일 (예: name@gmail.com)">
-      </div>
-      <div class="row">
-        <input id="newAllowedName" class="input grow" placeholder="이름 (메모용)">
-        <button class="btn primary" onclick="addAllowed()">허용</button>
-      </div>
-    </div>
-
-    <div class="card">
-      <h2>자료 내보내기</h2>
-      <p class="muted" style="margin-bottom:10px">전체 명단을 엑셀에서 열 수 있는 CSV 파일로 저장합니다.</p>
-      <button class="btn block" onclick="exportCsv()">CSV 파일 저장</button>
-    </div>
-
-    <div class="card">
-      <div class="muted" id="meInfo" style="margin-bottom:10px"></div>
-      <a class="btn block" href="index.html" style="text-align:center; text-decoration:none; margin-bottom:8px">접수 화면으로</a>
-      <button class="btn block" onclick="firebase.auth().signOut()">로그아웃</button>
+<!-- 확인 창 -->
+<div id="dlgBg" class="dlg-bg hidden">
+  <div class="dlg">
+    <h3 id="dlgTitle"></h3>
+    <p id="dlgMsg"></p>
+    <div class="btns">
+      <button class="b" id="dlgCancel">취소</button>
+      <button class="b pri" id="dlgOk">확인</button>
     </div>
   </div>
 </div>
@@ -110,12 +235,14 @@
 <script>
 var allowed = {};
 var _settingsLoaded = false;
+var _quick = [];        // 편집 중인 빠른 버튼 금액
+var _editGroup = null;  // 이름 변경 중인 그룹 id
 
 initApp({ masterOnly: true, onStart: startAdmin });
 
 function startAdmin() {
   _settingsLoaded = false;
-  $('meInfo').textContent = '로그인: ' + _me.email + ' (마스터)';
+  $('meInfo').textContent = _me.email + ' (마스터)';
   listen(ROOT + '/settings', function (s) {
     settings = s.val() || {};
     applyTitle();
@@ -129,27 +256,61 @@ function startAdmin() {
 
 function renderTop() {
   var arr = guestArr();
-  var inv = arr.filter(function (g) { return g.invited; }).length;
-  var vis = arr.filter(function (g) { return g.visited; }).length;
-  $('topMini').textContent = '등록 ' + arr.length + '명 · 청첩장 ' + inv + '명 · 방문 ' + vis + '명';
+  $('sumAll').textContent = arr.length;
+  $('sumInv').textContent = arr.filter(function (g) { return g.invited; }).length;
+  $('sumVis').textContent = arr.filter(function (g) { return g.visited; }).length;
 }
+
+/* ---------- 확인 창 ---------- */
+function ask(title, msg, okLabel, danger) {
+  return new Promise(function (resolve) {
+    $('dlgTitle').textContent = title;
+    $('dlgMsg').textContent = msg || '';
+    $('dlgOk').textContent = okLabel || '확인';
+    $('dlgOk').className = 'b ' + (danger ? 'red' : 'pri');
+    $('dlgCancel').classList.toggle('hidden', okLabel === null);
+    if (okLabel === null) $('dlgOk').textContent = '확인';
+    $('dlgBg').classList.remove('hidden');
+    function done(v) { $('dlgBg').classList.add('hidden'); resolve(v); }
+    $('dlgOk').onclick = function () { done(true); };
+    $('dlgCancel').onclick = function () { done(false); };
+    $('dlgBg').onclick = function (e) { if (e.target === $('dlgBg')) done(false); };
+  });
+}
+function notice(title, msg) { return ask(title, msg, null); }
 
 /* ---------- 앱 설정 ---------- */
 function fillSettings() {
   $('sTitle').value = settings.title || '';
-  $('sQuick').value = quickAmounts().map(function (a) { return a / 10000; }).join(', ');
+  _quick = quickAmounts().slice();
+  renderQuickChips();
   $('sTickets').value = defaultTickets();
 }
 
+function renderQuickChips() {
+  _quick.sort(function (a, b) { return a - b; });
+  $('quickChips').innerHTML = _quick.map(function (a, i) {
+    return '<span class="chip">' + manwon(a) + '<button type="button" title="빼기" onclick="removeQuick(' + i + ')">×</button></span>';
+  }).join('') || '<span class="muted">금액이 없습니다.</span>';
+}
+function addQuick() {
+  var n = parseFloat($('newQuick').value);
+  if (!(n > 0)) return;
+  var amt = Math.round(n * 10000);
+  if (_quick.indexOf(amt) < 0) _quick.push(amt);
+  $('newQuick').value = '';
+  renderQuickChips();
+}
+function removeQuick(i) { _quick.splice(i, 1); renderQuickChips(); }
+function stepT(d) { $('sTickets').value = Math.max(0, (parseInt($('sTickets').value, 10) || 0) + d); }
+
 function saveSettings() {
-  var q = $('sQuick').value.split(/[,\s]+/).map(function (s) { return parseFloat(s); })
-    .filter(function (n) { return n > 0; }).map(function (n) { return Math.round(n * 10000); });
-  if (!q.length) { alert('축의금 빠른 버튼 금액을 하나 이상 입력해 주세요.'); return; }
+  if (!_quick.length) { notice('금액이 없습니다', '축의금 빠른 버튼 금액을 하나 이상 넣어 주세요.'); return; }
   var t = parseInt($('sTickets').value, 10);
-  if (isNaN(t) || t < 0) { alert('기본 식권 매수를 숫자로 입력해 주세요.'); return; }
-  _db.ref(ROOT + '/settings').set({ title: $('sTitle').value.trim(), quickAmounts: q, defaultTickets: t })
-    .then(function () { fillSettings(); toast('저장했습니다'); })
-    .catch(function (e) { alert('저장 실패: ' + e.message); });
+  if (isNaN(t) || t < 0) { notice('식권 매수 확인', '기본 식권 매수를 숫자로 입력해 주세요.'); return; }
+  _db.ref(ROOT + '/settings').set({ title: $('sTitle').value.trim(), quickAmounts: _quick, defaultTickets: t })
+    .then(function () { fillSettings(); toast('설정을 저장했습니다'); })
+    .catch(function (e) { notice('저장 실패', e.message); });
 }
 
 /* ---------- 그룹 ---------- */
@@ -158,53 +319,67 @@ function renderGroupList() {
   guestArr().forEach(function (g) { counts[g.groupId] = (counts[g.groupId] || 0) + 1; });
   var gs = sortedGroups();
   $('groupList').innerHTML = gs.length ? gs.map(function (g) {
-    return '<li style="cursor:default"><div class="grow"><div class="nm">' + esc(g.name) + '</div><div class="meta">' + (counts[g.id] || 0) + '명</div></div>' +
-      '<button class="btn sm" onclick="renameGroup(\'' + g.id + '\')">이름 변경</button>' +
-      '<button class="btn sm danger" onclick="removeGroup(\'' + g.id + '\')">삭제</button></li>';
-  }).join('') : '<div class="empty">그룹이 없습니다. 접수 화면을 처음 열면 기본 그룹이 만들어집니다.</div>';
+    if (g.id === _editGroup) {
+      return '<li class="edit"><input id="grpEdit" class="inp" value="' + esc(g.name) + '" style="flex:1" onkeydown="if(event.key===\'Enter\')saveRename();if(event.key===\'Escape\')cancelRename()">' +
+        '<button class="b" onclick="cancelRename()">취소</button><button class="b pri" onclick="saveRename()">저장</button></li>';
+    }
+    return '<li><div class="main"><div class="nm">' + esc(g.name) + '</div></div>' +
+      '<span class="cnt">' + (counts[g.id] || 0) + '명</span>' +
+      '<div class="acts"><button class="b ghost" onclick="startRename(\'' + g.id + '\')">이름 변경</button>' +
+      '<button class="b ghost del" onclick="removeGroup(\'' + g.id + '\')">삭제</button></div></li>';
+  }).join('') : '<li><div class="main sb">그룹이 없습니다. 접수 화면을 처음 열면 기본 그룹이 만들어집니다.</div></li>';
+  if (_editGroup && $('grpEdit')) { var el = $('grpEdit'); if (document.activeElement !== el) { el.focus(); el.select(); } }
 }
 
 function addGroup() {
   var n = $('newGroup').value.trim();
   if (!n) return;
-  if (sortedGroups().some(function (g) { return g.name === n; })) { alert('같은 이름의 그룹이 있습니다.'); return; }
+  if (sortedGroups().some(function (g) { return g.name === n; })) { notice('같은 이름이 있습니다', '"' + n + '" 그룹이 이미 있습니다.'); return; }
   var maxOrder = sortedGroups().reduce(function (m, g) { return Math.max(m, g.order); }, 0);
   _db.ref(ROOT + '/data/groups').push({ name: n, order: maxOrder + 1 }).then(function () { $('newGroup').value = ''; toast('그룹을 추가했습니다'); });
 }
-function renameGroup(id) {
-  var n = prompt('새 그룹 이름', groups[id].name);
-  if (n == null) return;
-  n = n.trim(); if (!n) return;
-  _db.ref(ROOT + '/data/groups/' + id + '/name').set(n);
+function startRename(id) { _editGroup = id; renderGroupList(); }
+function cancelRename() { _editGroup = null; renderGroupList(); }
+function saveRename() {
+  var id = _editGroup, n = $('grpEdit').value.trim();
+  if (!n) return;
+  if (sortedGroups().some(function (g) { return g.name === n && g.id !== id; })) { notice('같은 이름이 있습니다', '"' + n + '" 그룹이 이미 있습니다.'); return; }
+  _editGroup = null;
+  _db.ref(ROOT + '/data/groups/' + id + '/name').set(n).then(function () { toast('이름을 바꿨습니다'); });
+  renderGroupList();
 }
 function removeGroup(id) {
   var cnt = guestArr().filter(function (g) { return g.groupId === id; }).length;
-  if (cnt) { alert('이 그룹에 ' + cnt + '명이 있어 삭제할 수 없습니다. 먼저 다른 그룹으로 옮겨 주세요.'); return; }
-  if (!confirm(groups[id].name + ' 그룹을 삭제할까요?')) return;
-  _db.ref(ROOT + '/data/groups/' + id).remove();
+  if (cnt) { notice('삭제할 수 없습니다', groups[id].name + ' 그룹에 ' + cnt + '명이 있습니다.\n먼저 명단에서 다른 그룹으로 옮겨 주세요.'); return; }
+  ask('그룹 삭제', groups[id].name + ' 그룹을 삭제할까요?', '삭제', true).then(function (ok) {
+    if (ok) _db.ref(ROOT + '/data/groups/' + id).remove().then(function () { toast('삭제했습니다'); });
+  });
 }
 
 /* ---------- 접수 담당자 계정 ---------- */
 function renderAllowed() {
-  var ks = Object.keys(allowed);
-  $('allowedList').innerHTML = '<li style="cursor:default"><div class="grow"><div class="nm">' + esc(MASTER_EMAIL) + '</div><div class="meta">마스터</div></div></li>' +
+  var ks = Object.keys(allowed).sort(function (a, b) { return String(allowed[a].name || allowed[a].email).localeCompare(String(allowed[b].name || allowed[b].email), 'ko'); });
+  function initial(s) { return esc(String(s || '?').charAt(0).toUpperCase()); }
+  $('allowedList').innerHTML = '<li><div class="av m">' + initial(MASTER_EMAIL) + '</div><div class="main"><div class="nm">' + esc(MASTER_EMAIL) + '</div><div class="sb">마스터</div></div></li>' +
     ks.map(function (k) {
       var a = allowed[k];
-      return '<li style="cursor:default"><div class="grow"><div class="nm">' + esc(a.email) + '</div><div class="meta">' + esc(a.name || '') + '</div></div>' +
-        '<button class="btn sm danger" onclick="removeAllowed(\'' + k + '\')">해제</button></li>';
+      return '<li><div class="av">' + initial(a.name || a.email) + '</div><div class="main"><div class="nm">' + esc(a.name || a.email) + '</div>' +
+        '<div class="sb">' + (a.name ? esc(a.email) : '') + '</div></div>' +
+        '<div class="acts"><button class="b ghost del" onclick="removeAllowed(\'' + k + '\')">해제</button></div></li>';
     }).join('');
 }
 function addAllowed() {
   var e = lc($('newAllowedEmail').value.trim());
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) { alert('이메일 주소를 확인해 주세요.'); return; }
-  if (/[#$\[\]\/]/.test(e)) { alert('사용할 수 없는 문자가 들어 있습니다.'); return; }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) { notice('이메일 확인', '구글 이메일 주소를 정확히 입력해 주세요.'); return; }
+  if (/[#$\[\]\/]/.test(e)) { notice('이메일 확인', '사용할 수 없는 문자가 들어 있습니다.'); return; }
   _db.ref(ROOT + '/allowed/' + emailKey(e)).set({ email: e, name: $('newAllowedName').value.trim(), at: firebase.database.ServerValue.TIMESTAMP })
     .then(function () { $('newAllowedEmail').value = ''; $('newAllowedName').value = ''; toast('허용했습니다'); })
-    .catch(function (err) { alert('저장 실패: ' + err.message); });
+    .catch(function (err) { notice('저장 실패', err.message); });
 }
 function removeAllowed(k) {
-  if (!confirm(allowed[k].email + ' 계정의 접근을 해제할까요?')) return;
-  _db.ref(ROOT + '/allowed/' + k).remove();
+  ask('접근 해제', (allowed[k].name ? allowed[k].name + ' (' + allowed[k].email + ')' : allowed[k].email) + '\n이 계정은 더 이상 접수 화면을 열 수 없습니다.', '해제', true).then(function (ok) {
+    if (ok) _db.ref(ROOT + '/allowed/' + k).remove().then(function () { toast('해제했습니다'); });
+  });
 }
 
 /* ---------- 내보내기 ---------- */
