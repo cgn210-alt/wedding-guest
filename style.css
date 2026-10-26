@@ -105,8 +105,10 @@ select.input { appearance: none; -webkit-appearance: none; padding-right: 36px; 
 @media (min-width: 640px) { .kpis { grid-template-columns: repeat(4, 1fr); } }
 .tbl-wrap { overflow-x: auto; margin: 0 -4px; }
 table.tbl { width: 100%; border-collapse: collapse; font-size: 13.5px; }
-.tbl th, .tbl td { padding: 10px 6px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; }
-.tbl th:first-child, .tbl td:first-child { text-align: left; font-weight: 700; }
+.tbl th, .tbl td { padding: 10px 4px; border-bottom: 1px solid var(--line); text-align: right; white-space: nowrap; vertical-align: top; }
+.tbl th:first-child, .tbl td:first-child { text-align: left; font-weight: 700; white-space: normal; word-break: keep-all; padding-left: 6px; }
+.tbl th:last-child, .tbl td:last-child { padding-right: 6px; }
+.tbl td small, .tbl th small { display: block; font-size: 11px; font-weight: 600; color: var(--sub); margin-top: 1px; }
 .tbl th { color: var(--sub); font-weight: 700; font-size: 12px; }
 .tbl tr.sum td { font-weight: 800; border-bottom: 0; background: var(--gray-soft); }
 .tbl tr.sum td:first-child { border-radius: 8px 0 0 8px; }

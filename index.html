@@ -14,7 +14,7 @@
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
-<link rel="stylesheet" href="style.css?v=3">
+<link rel="stylesheet" href="style.css?v=4">
 </head>
 <body>
 
@@ -491,14 +491,17 @@ function renderStats() {
       r.tickets += Number(g.tickets) || 0;
     }
   });
-  var html = '<tr><th>그룹</th><th>청첩장</th><th>방문</th><th>방문율</th><th>명단 외</th><th>축의금</th><th>식권</th></tr>';
+  // 휴대폰 폭에 맞도록 방문율은 방문 칸 아래에, 축의금은 만원 단위로 표시
+  function visitCell(v, inv) { return v + (inv ? '<small>' + pct(v, inv) + '</small>' : ''); }
+  function man(n) { return ((Number(n) || 0) / 10000).toLocaleString('ko-KR', { maximumFractionDigits: 4 }); }
+  var html = '<tr><th>그룹</th><th>청첩장</th><th>방문</th><th>명단 외</th><th>축의금<small>만원</small></th><th>식권</th></tr>';
   order.forEach(function (id) {
     var r = rows[id];
-    html += '<tr><td>' + esc(id === '_none' ? '미분류' : groupName(id)) + '</td><td>' + r.inv + '</td><td>' + r.invV + '</td><td>' + pct(r.invV, r.inv) +
-      '</td><td>' + r.walk + '</td><td>' + won(r.gift) + '</td><td>' + r.tickets + '</td></tr>';
+    html += '<tr><td>' + esc(id === '_none' ? '미분류' : groupName(id)) + '</td><td>' + r.inv + '</td><td>' + visitCell(r.invV, r.inv) +
+      '</td><td>' + r.walk + '</td><td>' + man(r.gift) + '</td><td>' + r.tickets + '</td></tr>';
   });
-  html += '<tr class="sum"><td>합계</td><td>' + t.invited + '</td><td>' + t.invVisited + '</td><td>' + pct(t.invVisited, t.invited) +
-    '</td><td>' + t.walk + '</td><td>' + won(t.gift) + '</td><td>' + t.tickets + '</td></tr>';
+  html += '<tr class="sum"><td>합계</td><td>' + t.invited + '</td><td>' + visitCell(t.invVisited, t.invited) +
+    '</td><td>' + t.walk + '</td><td>' + man(t.gift) + '</td><td>' + t.tickets + '</td></tr>';
   $('groupTable').innerHTML = html;
 
   var dist = {};
