@@ -367,6 +367,17 @@ function removeAllowed(k) {
 
 /* ---------- 내보내기 ---------- */
 function exportCsv() {
+  // 카카오톡 등 앱 안 브라우저는 파일 내려받기를 지원하지 않음 → 외부 브라우저로 열도록 안내
+  if (/KAKAOTALK/i.test(navigator.userAgent)) {
+    ask('카카오톡에서는 저장할 수 없습니다', '카카오톡 안의 브라우저는 파일 저장을 지원하지 않습니다.\n크롬·사파리 같은 기본 브라우저로 이 화면을 열어 다시 눌러 주세요.', '기본 브라우저로 열기').then(function (ok) {
+      if (ok) location.href = 'kakaotalk://web/openExternal?url=' + encodeURIComponent(location.href);
+    });
+    return;
+  }
+  if (/NAVER|Instagram|FBAN|FBAV|Line\//i.test(navigator.userAgent)) {
+    notice('이 앱에서는 저장할 수 없습니다', '앱 안의 브라우저는 파일 저장을 지원하지 않습니다.\n오른쪽 위 메뉴에서 "다른 브라우저로 열기"를 눌러 크롬·사파리에서 다시 눌러 주세요.');
+    return;
+  }
   var arr = guestArr().sort(function (a, b) {
     var ga = groupName(a.groupId), gb = groupName(b.groupId);
     return ga.localeCompare(gb, 'ko') || byName(a, b);
