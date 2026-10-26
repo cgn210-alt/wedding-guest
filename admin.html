@@ -6,9 +6,9 @@
 <meta name="robots" content="noindex, nofollow">
 <title>결혼식 하객 접수 관리자</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
-<link rel="stylesheet" href="style.css?v=1">
+<link rel="stylesheet" href="style.css?v=2">
 <style>
-  body { padding-bottom: 40px; background: #f7f6f4; }
+  body { padding-bottom: 40px; }
 
   /* 상단 */
   .ad-top { position: sticky; top: 0; z-index: 20; background: rgba(255,255,255,.92); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
@@ -75,15 +75,6 @@
   .av.m { background: var(--accent); color: #fff; }
   .rows li.edit .inp { padding: 8px 11px; }
   .sec-ft { padding: 14px 18px 18px; border-top: 1px solid var(--line); background: #fcfbfa; }
-
-  /* 확인 창 */
-  .dlg-bg { position: fixed; inset: 0; background: rgba(30,25,22,.4); z-index: 70; display: flex; align-items: center; justify-content: center; padding: 16px; }
-  .dlg { background: #fff; border-radius: 16px; width: 100%; max-width: 360px; padding: 22px 20px 18px; box-shadow: 0 20px 50px rgba(0,0,0,.18); }
-  .dlg h3 { font-size: 16.5px; font-weight: 800; margin-bottom: 8px; }
-  .dlg p { font-size: 14px; color: var(--sub); line-height: 1.55; white-space: pre-line; }
-  .dlg .btns { display: flex; gap: 8px; margin-top: 20px; }
-  .dlg .btns .b { flex: 1; padding: 11px; }
-  .dlg .b.red { background: #dc2626; border-color: #dc2626; color: #fff; }
 
   .foot { text-align: center; margin-top: 8px; }
   .foot .meinfo { font-size: 12.5px; color: var(--sub); margin-bottom: 10px; }
@@ -213,25 +204,13 @@
   </div>
 </div>
 
-<!-- 확인 창 -->
-<div id="dlgBg" class="dlg-bg hidden">
-  <div class="dlg">
-    <h3 id="dlgTitle"></h3>
-    <p id="dlgMsg"></p>
-    <div class="btns">
-      <button class="b" id="dlgCancel">취소</button>
-      <button class="b pri" id="dlgOk">확인</button>
-    </div>
-  </div>
-</div>
-
 <div class="toast" id="toast"></div>
 
 <script src="firebase-config.js?v=2"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-<script src="common.js?v=1"></script>
+<script src="common.js?v=2"></script>
 <script>
 var allowed = {};
 var _settingsLoaded = false;
@@ -260,24 +239,6 @@ function renderTop() {
   $('sumInv').textContent = arr.filter(function (g) { return g.invited; }).length;
   $('sumVis').textContent = arr.filter(function (g) { return g.visited; }).length;
 }
-
-/* ---------- 확인 창 ---------- */
-function ask(title, msg, okLabel, danger) {
-  return new Promise(function (resolve) {
-    $('dlgTitle').textContent = title;
-    $('dlgMsg').textContent = msg || '';
-    $('dlgOk').textContent = okLabel || '확인';
-    $('dlgOk').className = 'b ' + (danger ? 'red' : 'pri');
-    $('dlgCancel').classList.toggle('hidden', okLabel === null);
-    if (okLabel === null) $('dlgOk').textContent = '확인';
-    $('dlgBg').classList.remove('hidden');
-    function done(v) { $('dlgBg').classList.add('hidden'); resolve(v); }
-    $('dlgOk').onclick = function () { done(true); };
-    $('dlgCancel').onclick = function () { done(false); };
-    $('dlgBg').onclick = function (e) { if (e.target === $('dlgBg')) done(false); };
-  });
-}
-function notice(title, msg) { return ask(title, msg, null); }
 
 /* ---------- 앱 설정 ---------- */
 function fillSettings() {

@@ -14,7 +14,7 @@
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
-<link rel="stylesheet" href="style.css?v=1">
+<link rel="stylesheet" href="style.css?v=2">
 </head>
 <body>
 
@@ -44,17 +44,22 @@
 
 <!-- 앱 -->
 <div id="appScreen" class="hidden">
-  <div class="top">
-    <h1 class="app-title">결혼식 하객 접수</h1>
-    <div class="mini" id="topMini">불러오는 중…</div>
-  </div>
+  <header class="top">
+    <div class="in">
+      <h1 class="app-title">결혼식 하객 접수</h1>
+      <div class="mini" id="topMini"><span>불러오는 중…</span></div>
+    </div>
+  </header>
 
   <!-- 접수 -->
   <div class="wrap" id="tab-recv">
     <div class="card">
-      <input id="recvSearch" class="input search" type="search" placeholder="이름 검색" autocomplete="off" oninput="renderRecv()">
-      <ul class="list" id="recvResults" style="margin-top:6px"></ul>
-      <button class="btn block" style="margin-top:10px" onclick="openWalkIn()">+ 명단에 없는 방문자 접수</button>
+      <div class="search-box">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9a918a" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+        <input id="recvSearch" class="input search" type="search" placeholder="이름으로 찾기" autocomplete="off" oninput="renderRecv()">
+      </div>
+      <ul class="list" id="recvResults" style="margin-top:8px"></ul>
+      <button class="btn block dashed" style="margin-top:10px" onclick="openWalkIn()">+ 명단에 없는 방문자 접수</button>
     </div>
     <div class="card">
       <h2>최근 접수 <span class="muted" id="recentCount"></span></h2>
@@ -71,7 +76,7 @@
         <select id="bulkGroup" class="input"></select>
       </div>
       <div class="field">
-        <label>이름 (한 줄에 한 명씩, 여러 명 한꺼번에 가능)</label>
+        <label>이름 <small>한 줄에 한 명씩, 여러 명 한꺼번에 가능</small></label>
         <textarea id="bulkNames" class="input" rows="4" placeholder="홍길동&#10;김철수"></textarea>
       </div>
       <button class="btn primary block" onclick="bulkAdd()">등록</button>
@@ -108,15 +113,18 @@
 
   <!-- 설정 -->
   <div class="wrap hidden" id="tab-set">
+    <div class="card">
+      <div class="me">
+        <div class="av" id="meAv"></div>
+        <div><div class="em" id="meInfo"></div><div class="muted" id="meRole"></div></div>
+      </div>
+    </div>
     <div class="card hidden" id="adminCard">
       <h2>관리자</h2>
-      <p class="muted" style="margin-bottom:10px">앱 제목, 축의금 빠른 버튼, 그룹, 접수 담당자 계정, 자료 내보내기는 관리자 페이지에서 합니다.</p>
-      <a class="btn primary block" href="admin.html" style="text-align:center; text-decoration:none">관리자 페이지 열기</a>
+      <p class="muted" style="margin-bottom:12px; line-height:1.5">앱 제목, 축의금 빠른 버튼, 그룹, 접수 담당자 계정, 자료 내보내기는 관리자 페이지에서 합니다.</p>
+      <a class="btn primary block" href="admin.html" style="text-decoration:none">관리자 페이지 열기</a>
     </div>
-    <div class="card">
-      <div class="muted" id="meInfo" style="margin-bottom:10px"></div>
-      <button class="btn block" onclick="firebase.auth().signOut()">로그아웃</button>
-    </div>
+    <button class="btn block" onclick="firebase.auth().signOut()">로그아웃</button>
   </div>
 
   <nav class="tabs">
@@ -143,10 +151,10 @@
       <label><input type="checkbox" id="mInvited"> 청첩장 받음</label>
       <label><input type="checkbox" id="mVisited" onchange="syncVisitFields()"> 식장 방문</label>
     </div>
-    <div id="mVisitFields">
+    <div id="mVisitFields" class="visit-box">
       <div class="field">
-        <label>축의금 (원)</label>
-        <input id="mGift" class="input" inputmode="numeric" autocomplete="off" placeholder="0" oninput="onGiftInput()">
+        <label>축의금 <small>원</small></label>
+        <input id="mGift" class="input gift-input" inputmode="numeric" autocomplete="off" placeholder="0" oninput="onGiftInput()">
         <div class="quick" id="mQuick"></div>
       </div>
       <div class="field">
@@ -159,7 +167,7 @@
       </div>
     </div>
     <div class="field">
-      <label>메모 (동명이인 구분, 관계 등)</label>
+      <label>메모 <small>동명이인 구분, 관계 등</small></label>
       <input id="mMemo" class="input" autocomplete="off">
     </div>
     <div class="muted" id="mInfo"></div>
@@ -167,7 +175,7 @@
       <button class="btn" onclick="closeModal()">닫기</button>
       <button class="btn primary" id="mSave" onclick="saveModal()">저장</button>
     </div>
-    <div class="modal-actions" id="mExtra">
+    <div class="modal-actions sub" id="mExtra">
       <button class="btn danger" id="mCancelVisit" onclick="cancelVisit()">방문 취소</button>
       <button class="btn danger" id="mDelete" onclick="deleteGuest()">삭제</button>
     </div>
@@ -180,7 +188,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-<script src="common.js?v=1"></script>
+<script src="common.js?v=2"></script>
 <script>
 var _loaded = { groups: false, guests: false };
 var _tab = 'recv';
@@ -190,7 +198,9 @@ initApp({ onStart: startApp });
 
 function startApp() {
   _loaded = { groups: false, guests: false };
-  $('meInfo').textContent = '로그인: ' + _me.email + (_isMaster ? ' (마스터)' : '');
+  $('meInfo').textContent = _me.email;
+  $('meRole').textContent = _isMaster ? '마스터' : '접수 담당자';
+  $('meAv').textContent = String(_me.email || '?').charAt(0).toUpperCase();
   $('adminCard').classList.toggle('hidden', !_isMaster);
   listen(ROOT + '/settings', function (s) {
     settings = s.val() || {};
@@ -241,15 +251,17 @@ function calcTotals() {
 
 function renderTop() {
   var t = calcTotals();
-  $('topMini').textContent = '방문 ' + t.visited + '명 · 축의금 ' + won(t.gift) + ' · 식권 ' + t.tickets + '장';
+  $('topMini').innerHTML = '<span>방문 ' + t.visited + '명</span><span>축의금 ' + won(t.gift) + '</span><span>식권 ' + t.tickets + '장</span>';
 }
 
 function guestLi(g) {
   var badge = g.visited ? (g.invited ? '<span class="badge b-ok">방문</span>' : '<span class="badge b-walk">명단 외</span>')
                         : '<span class="badge b-wait">미방문</span>';
+  var avCls = g.visited ? (g.invited ? 'ok' : 'walk') : '';
   var right = g.visited ? '<div class="amt">' + manwon(g.gift) + '<small>식권 ' + (Number(g.tickets) || 0) + '장</small></div>' : '';
-  return '<li onclick="openGuest(\'' + g.id + '\')"><div><div class="nm">' + esc(g.name) + ' ' + badge + '</div>' +
-    '<div class="meta"><span class="badge b-grp">' + esc(groupName(g.groupId)) + '</span>' + (g.memo ? ' ' + esc(g.memo) : '') +
+  return '<li onclick="openGuest(\'' + g.id + '\')"><div class="av ' + avCls + '">' + esc(String(g.name).charAt(0)) + '</div>' +
+    '<div class="body"><div class="nm">' + esc(g.name) + ' ' + badge + '</div>' +
+    '<div class="meta">' + esc(groupName(g.groupId)) + (g.memo ? ' · ' + esc(g.memo) : '') +
     (g.visited && g.visitedAt ? ' · ' + hm(g.visitedAt) : '') + '</div></div>' + right + '</li>';
 }
 
@@ -261,10 +273,10 @@ function renderRecv() {
   else {
     var hits = guestArr().filter(function (g) { return String(g.name).replace(/\s/g, '').indexOf(q) >= 0; }).sort(byName).slice(0, 30);
     box.innerHTML = hits.length ? hits.map(guestLi).join('')
-      : '<li style="cursor:default"><div class="empty" style="width:100%">명단에 없습니다. 아래 버튼으로 접수하세요.</div></li>';
+      : '<li class="empty-li"><div class="empty" style="width:100%">명단에 없습니다. 아래 버튼으로 접수하세요.</div></li>';
   }
   var recent = guestArr().filter(function (g) { return g.visited; }).sort(function (a, b) { return (b.visitedAt || 0) - (a.visitedAt || 0); });
-  $('recentCount').textContent = '(' + recent.length + '명)';
+  $('recentCount').textContent = recent.length + '명';
   $('recentList').innerHTML = recent.length ? recent.slice(0, 30).map(guestLi).join('') : '<div class="empty">아직 접수된 방문자가 없습니다.</div>';
 }
 
@@ -295,9 +307,9 @@ function renderList() {
 
 function bulkAdd() {
   var gid = $('bulkGroup').value;
-  if (!gid) { alert('그룹을 먼저 만들어 주세요.'); return; }
+  if (!gid) { notice('그룹이 없습니다', '관리자 페이지에서 그룹을 먼저 만들어 주세요.'); return; }
   var names = $('bulkNames').value.split(/\r?\n/).map(function (s) { return s.trim(); }).filter(Boolean);
-  if (!names.length) { alert('이름을 입력해 주세요.'); return; }
+  if (!names.length) { notice('이름을 입력해 주세요', '한 줄에 한 명씩 입력합니다.'); return; }
   var exist = {};
   guestArr().forEach(function (g) { if (g.groupId === gid) exist[g.name] = true; });
   var up = {}, added = 0, skipped = [];
@@ -308,12 +320,12 @@ function bulkAdd() {
       createdAt: firebase.database.ServerValue.TIMESTAMP, by: _me.email };
     added++;
   });
-  if (!added) { alert('이미 같은 그룹에 등록된 이름입니다: ' + skipped.join(', ')); return; }
+  if (!added) { notice('이미 등록된 이름입니다', '같은 그룹에 이미 있습니다: ' + skipped.join(', ')); return; }
   _db.ref(ROOT + '/data/guests').update(up).then(function () {
     $('bulkNames').value = '';
     toast(added + '명 등록했습니다');
-    if (skipped.length) alert('같은 그룹에 이미 있어 건너뛴 이름: ' + skipped.join(', ') + '\n동명이인이면 명단에서 개별로 추가하고 메모로 구분해 주세요.');
-  }).catch(function (e) { alert('저장 실패: ' + e.message); });
+    if (skipped.length) notice('일부 이름은 건너뛰었습니다', '같은 그룹에 이미 있는 이름: ' + skipped.join(', ') + '\n동명이인이면 개별로 수정해 메모로 구분해 주세요.');
+  }).catch(function (e) { notice('저장하지 못했습니다', e.message); });
 }
 
 /* ---------- 입력 창 ---------- */
@@ -384,9 +396,9 @@ function stepTicket(d) {
 
 function saveModal() {
   var name = $('mName').value.trim();
-  if (!name) { alert('이름을 입력해 주세요.'); return; }
+  if (!name) { notice('이름을 입력해 주세요'); return; }
   var gid = $('mGroup').value;
-  if (!gid) { alert('그룹을 선택해 주세요.'); return; }
+  if (!gid) { notice('그룹을 선택해 주세요'); return; }
   var visited = $('mVisited').checked;
   var tickets = Math.max(0, parseInt($('mTickets').value, 10) || 0);
   var data = {
@@ -398,44 +410,53 @@ function saveModal() {
   var prev = _edit.id ? guests[_edit.id] : null;
   if (visited && !(prev && prev.visited)) { data.visitedAt = firebase.database.ServerValue.TIMESTAMP; data.visitBy = _me.email; }
   if (!visited) { data.visitedAt = null; data.visitBy = null; }
+  var edit = _edit;
+  function write() {
+    var p;
+    if (edit.id) {
+      p = _db.ref(ROOT + '/data/guests/' + edit.id).update(data);
+    } else {
+      data.createdAt = firebase.database.ServerValue.TIMESTAMP; data.by = _me.email;
+      p = _db.ref(ROOT + '/data/guests').push(data);
+    }
+    var wasRecv = edit.from !== 'list';
+    p.then(function () {
+      closeModal();
+      toast(visited ? name + ' 접수 · ' + manwon(data.gift) + ' · 식권 ' + data.tickets + '장' : '저장했습니다');
+      if (wasRecv) { $('recvSearch').value = ''; renderRecv(); $('recvSearch').focus(); }
+    }).catch(function (e) { notice('저장하지 못했습니다', e.message); });
+  }
   if (!data.invited && !visited) {
-    if (!confirm('청첩장도 받지 않았고 방문도 하지 않은 사람으로 저장됩니다. 계속할까요?')) return;
+    ask('이대로 저장할까요?', '청첩장도 받지 않았고 방문도 하지 않은 사람으로 저장됩니다.', '저장').then(function (ok) { if (ok) write(); });
+    return;
   }
-  var p;
-  if (_edit.id) {
-    p = _db.ref(ROOT + '/data/guests/' + _edit.id).update(data);
-  } else {
-    data.createdAt = firebase.database.ServerValue.TIMESTAMP; data.by = _me.email;
-    p = _db.ref(ROOT + '/data/guests').push(data);
-  }
-  var wasRecv = _edit.from !== 'list';
-  p.then(function () {
-    closeModal();
-    toast(visited ? name + ' 접수 · ' + manwon(data.gift) + ' · 식권 ' + data.tickets + '장' : '저장했습니다');
-    if (wasRecv) { $('recvSearch').value = ''; renderRecv(); $('recvSearch').focus(); }
-  }).catch(function (e) { alert('저장 실패: ' + e.message); });
+  write();
 }
 
 function cancelVisit() {
   if (!_edit || !_edit.id) return;
-  var g = guests[_edit.id];
+  var id = _edit.id, g = guests[id];
   if (!g.invited) {
-    if (!confirm(g.name + ' 님은 명단 외 방문자라 방문을 취소하면 기록이 삭제됩니다. 삭제할까요?')) return;
-    _db.ref(ROOT + '/data/guests/' + _edit.id).remove().then(function () { closeModal(); toast('삭제했습니다'); });
+    ask('방문 기록 삭제', g.name + ' 님은 명단 외 방문자라 방문을 취소하면 기록이 삭제됩니다.', '삭제', true).then(function (ok) {
+      if (ok) _db.ref(ROOT + '/data/guests/' + id).remove().then(function () { closeModal(); toast('삭제했습니다'); });
+    });
     return;
   }
-  if (!confirm(g.name + ' 님의 방문 기록(축의금 ' + manwon(g.gift) + ', 식권 ' + (g.tickets || 0) + '장)을 취소할까요?')) return;
-  _db.ref(ROOT + '/data/guests/' + _edit.id).update({
-    visited: false, gift: 0, tickets: 0, visitedAt: null, visitBy: null,
-    updatedAt: firebase.database.ServerValue.TIMESTAMP, updatedBy: _me.email
-  }).then(function () { closeModal(); toast('방문을 취소했습니다'); });
+  ask('방문 취소', g.name + ' 님의 방문 기록을 취소할까요?\n축의금 ' + manwon(g.gift) + ', 식권 ' + (g.tickets || 0) + '장', '방문 취소', true).then(function (ok) {
+    if (!ok) return;
+    _db.ref(ROOT + '/data/guests/' + id).update({
+      visited: false, gift: 0, tickets: 0, visitedAt: null, visitBy: null,
+      updatedAt: firebase.database.ServerValue.TIMESTAMP, updatedBy: _me.email
+    }).then(function () { closeModal(); toast('방문을 취소했습니다'); });
+  });
 }
 
 function deleteGuest() {
   if (!_edit || !_edit.id) return;
-  var g = guests[_edit.id];
-  if (!confirm(g.name + ' 님을 명단에서 완전히 삭제할까요?' + (g.visited ? '\n축의금·식권 기록도 함께 삭제됩니다.' : ''))) return;
-  _db.ref(ROOT + '/data/guests/' + _edit.id).remove().then(function () { closeModal(); toast('삭제했습니다'); });
+  var id = _edit.id, g = guests[id];
+  ask('명단에서 삭제', g.name + ' 님을 명단에서 완전히 삭제할까요?' + (g.visited ? '\n축의금·식권 기록도 함께 삭제됩니다.' : ''), '삭제', true).then(function (ok) {
+    if (ok) _db.ref(ROOT + '/data/guests/' + id).remove().then(function () { closeModal(); toast('삭제했습니다'); });
+  });
 }
 
 /* ---------- 통계 ---------- */

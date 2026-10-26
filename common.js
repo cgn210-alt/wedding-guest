@@ -53,6 +53,31 @@ function applyTitle() {
   document.title = appTitle() + (document.body.getAttribute('data-title-suffix') || '');
 }
 
+/* ---------- 확인 창 (브라우저 기본 알림창 대신) ---------- */
+// okLabel 이 null 이면 확인 버튼만 있는 안내 창
+function ask(title, msg, okLabel, danger) {
+  if (!$('dlgBg')) {
+    var el = document.createElement('div');
+    el.id = 'dlgBg'; el.className = 'dlg-bg hidden';
+    el.innerHTML = '<div class="dlg"><h3 id="dlgTitle"></h3><p id="dlgMsg"></p><div class="btns">' +
+      '<button class="b" id="dlgCancel">취소</button><button class="b pri" id="dlgOk">확인</button></div></div>';
+    document.body.appendChild(el);
+  }
+  return new Promise(function (resolve) {
+    $('dlgTitle').textContent = title;
+    $('dlgMsg').textContent = msg || '';
+    $('dlgOk').textContent = okLabel || '확인';
+    $('dlgOk').className = 'b ' + (danger ? 'red' : 'pri');
+    $('dlgCancel').classList.toggle('hidden', okLabel === null);
+    $('dlgBg').classList.remove('hidden');
+    function done(v) { $('dlgBg').classList.add('hidden'); resolve(v); }
+    $('dlgOk').onclick = function () { done(true); };
+    $('dlgCancel').onclick = function () { done(false); };
+    $('dlgBg').onclick = function (e) { if (e.target === $('dlgBg')) done(false); };
+  });
+}
+function notice(title, msg) { return ask(title, msg, null); }
+
 /* ---------- 로그인 ---------- */
 // opts.masterOnly: 마스터만 들어올 수 있는 페이지
 // opts.onStart(): 접근이 확인된 뒤 호출
@@ -83,7 +108,7 @@ function signIn() {
     if (e.code === 'auth/popup-blocked' || e.code === 'auth/operation-not-supported-in-this-environment') {
       firebase.auth().signInWithRedirect(p);
     } else if (e.code !== 'auth/popup-closed-by-user' && e.code !== 'auth/cancelled-popup-request') {
-      alert('로그인에 실패했습니다.\n' + e.message);
+      notice('로그인에 실패했습니다', e.message);
     }
   });
 }
