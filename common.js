@@ -56,6 +56,31 @@ function applyTitle() {
   document.title = appTitle() + (document.body.getAttribute('data-title-suffix') || '');
 }
 
+/* ---------- 뒤로 가기 (휴대폰 뒤로 버튼 = 바로 전 단계) ---------- */
+// 창(입력 창·선택 창·확인 창)을 열 때마다 방문 기록을 하나 쌓아, 뒤로 가기를 누르면 그 창만 닫힘
+// 창이 없을 때는 history.state.tab 으로 이전 탭에 돌아감 (페이지가 window.onPopTab 을 정의)
+var _layers = [], _skipPops = 0, _pendingBack = 0;
+function openLayer(name, hide) {
+  _layers.push({ name: name, hide: hide });
+  history.pushState({ layer: name, tab: window._tab }, '');
+}
+function closeLayer(name) {
+  for (var i = _layers.length - 1; i >= 0; i--) {
+    if (_layers[i].name !== name) continue;
+    var l = _layers.splice(i, 1)[0];
+    l.hide();
+    // 같은 순간에 여러 창이 닫혀도 한 번에 되돌림
+    if (++_pendingBack === 1) setTimeout(function () { var n = _pendingBack; _pendingBack = 0; _skipPops++; history.go(-n); }, 0);
+    return true;
+  }
+  return false;
+}
+window.addEventListener('popstate', function (e) {
+  if (_skipPops > 0) { _skipPops--; return; }
+  if (_layers.length) { _layers.pop().hide(); return; }
+  if (e.state && e.state.tab && window.onPopTab) window.onPopTab(e.state.tab);
+});
+
 /* ---------- 확인 창 (브라우저 기본 알림창 대신) ---------- */
 // okLabel 이 null 이면 확인 버튼만 있는 안내 창
 function ask(title, msg, okLabel, danger) {
@@ -73,7 +98,9 @@ function ask(title, msg, okLabel, danger) {
     $('dlgOk').className = 'b ' + (danger ? 'red' : 'pri');
     $('dlgCancel').classList.toggle('hidden', okLabel === null);
     $('dlgBg').classList.remove('hidden');
-    function done(v) { $('dlgBg').classList.add('hidden'); resolve(v); }
+    var result = false;   // 뒤로 가기로 닫히면 취소
+    openLayer('dlg', function () { $('dlgBg').classList.add('hidden'); resolve(result); });
+    function done(v) { result = v; closeLayer('dlg'); }
     $('dlgOk').onclick = function () { done(true); };
     $('dlgCancel').onclick = function () { done(false); };
     $('dlgBg').onclick = function (e) { if (e.target === $('dlgBg')) done(false); };
@@ -105,7 +132,7 @@ function openPicker(sel, sync) {
     var el = document.createElement('div');
     el.id = 'pickBg'; el.className = 'pick-bg hidden';
     el.innerHTML = '<div class="pick-sheet"><h3 id="pickTitle"></h3><ul id="pickList"></ul></div>';
-    el.onclick = function (e) { if (e.target === el) el.classList.add('hidden'); };
+    el.onclick = function (e) { if (e.target === el) closeLayer('pick'); };
     document.body.appendChild(el);
   }
   $('pickTitle').textContent = sel.getAttribute('data-title') || '선택';
@@ -118,11 +145,12 @@ function openPicker(sel, sync) {
     li.onclick = function () {
       _selValue.set.call(sel, sel.options[+li.getAttribute('data-i')].value);
       sync();
-      $('pickBg').classList.add('hidden');
+      closeLayer('pick');
       sel.dispatchEvent(new Event('change'));
     };
   });
   $('pickBg').classList.remove('hidden');
+  openLayer('pick', function () { $('pickBg').classList.add('hidden'); });
   var on = $('pickList').querySelector('.on');
   if (on) on.scrollIntoView({ block: 'center' });
 }

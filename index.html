@@ -212,13 +212,15 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-<script src="common.js?v=5"></script>
+<script src="common.js?v=6"></script>
 <script>
 var _loaded = { groups: false, guests: false };
 var _tab = 'recv';
 var _edit = null;   // { id: 기존 id 또는 null, from: 'recv' | 'walk' | 'list' }
 
 document.querySelectorAll('select.input').forEach(prettySelect);
+history.replaceState({ tab: 'recv' }, '');
+window.onPopTab = function (t) { setTab(t, true); };
 initApp({ onStart: startApp });
 
 function startApp() {
@@ -247,7 +249,9 @@ function startApp() {
 }
 
 /* ---------- 탭 ---------- */
-function setTab(t) {
+// fromBack: 뒤로 가기로 돌아온 경우에는 방문 기록을 새로 쌓지 않음
+function setTab(t, fromBack) {
+  if (!fromBack && t !== _tab) history.pushState({ tab: t }, '');
   _tab = t;
   ['recv', 'list', 'stats', 'set'].forEach(function (k) { $('tab-' + k).classList.toggle('hidden', k !== t); });
   document.querySelectorAll('.tabs button').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-tab') === t); });
@@ -421,8 +425,9 @@ function openWalkIn() {
 function openModal() {
   renderQuick(); syncVisitFields(); syncInvFields();
   $('modalBg').classList.remove('hidden');
+  openLayer('modal', function () { $('modalBg').classList.add('hidden'); _edit = null; });
 }
-function closeModal() { $('modalBg').classList.add('hidden'); _edit = null; }
+function closeModal() { if (!closeLayer('modal')) { $('modalBg').classList.add('hidden'); _edit = null; } }
 
 function syncVisitFields() { $('mVisitFields').classList.toggle('hidden', !$('mVisited').checked); }
 function syncInvFields() { $('mInvFields').classList.toggle('hidden', !$('mInvited').checked); }
