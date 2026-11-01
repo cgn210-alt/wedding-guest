@@ -76,6 +76,10 @@ select.input { appearance: none; -webkit-appearance: none; padding-right: 36px; 
 .b-grp { background: var(--gray-soft); color: var(--sub); }
 .b-inv { background: none; border: 1px solid var(--line); color: var(--sub); font-weight: 600; padding: 1px 7px; }
 
+.bulk-type { margin: 8px 0 6px; padding: 10px 12px; background: #fbfaf9; border: 1px dashed var(--line); border-radius: 12px; font-size: 13px; color: var(--sub); }
+.bulk-type b { color: var(--text); }
+.bulk-type .row { margin-top: 7px; flex-wrap: wrap; gap: 6px; }
+
 /* 종류 선택 버튼 (종이/모바일/둘 다) */
 .seg { display: flex; border: 1px solid var(--line); border-radius: 11px; overflow: hidden; }
 .seg button { flex: 1; border: 0; background: #fff; padding: 10px 6px; font-size: 14px; font-weight: 700; color: var(--sub); }

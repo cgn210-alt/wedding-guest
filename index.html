@@ -14,7 +14,7 @@
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
-<link rel="stylesheet" href="style.css?v=5">
+<link rel="stylesheet" href="style.css?v=6">
 </head>
 <body>
 
@@ -98,10 +98,20 @@
           <option value="walk">명단 외 방문</option>
           <option value="paper">종이 청첩장</option>
           <option value="mobile">모바일 청첩장</option>
+          <option value="notype">청첩장 · 종류 미지정</option>
         </select>
       </div>
       <input id="fName" class="input" type="search" placeholder="이름 검색" oninput="renderList()" autocomplete="off">
       <div class="muted" id="listCount" style="margin:10px 0 2px"></div>
+      <div class="bulk-type" id="bulkTypeBar">
+        <span>지금 목록의 청첩장 받은 분 <b id="bulkTypeCount">0</b>명을</span>
+        <div class="row">
+          <button type="button" class="btn sm" onclick="bulkSetType('paper')">종이</button>
+          <button type="button" class="btn sm" onclick="bulkSetType('mobile')">모바일</button>
+          <button type="button" class="btn sm" onclick="bulkSetType('both')">둘 다</button>
+          <span class="muted">로 지정</span>
+        </div>
+      </div>
       <ul class="list" id="guestList"></ul>
     </div>
   </div>
@@ -317,11 +327,30 @@ function renderList() {
     if (fs === 'walk' && !(!g.invited && g.visited)) return false;
     if (fs === 'paper' && !(g.invited && (g.invType === 'paper' || g.invType === 'both'))) return false;
     if (fs === 'mobile' && !(g.invited && (g.invType === 'mobile' || g.invType === 'both'))) return false;
+    if (fs === 'notype' && !(g.invited && !INV_TYPES[g.invType])) return false;
     if (q && String(g.name).replace(/\s/g, '').indexOf(q) < 0) return false;
     return true;
   }).sort(byName);
   $('listCount').textContent = arr.length + '명';
   $('guestList').innerHTML = arr.length ? arr.map(guestLi).join('') : '<div class="empty">해당하는 사람이 없습니다.</div>';
+  _listInvIds = arr.filter(function (g) { return g.invited; }).map(function (g) { return g.id; });
+  $('bulkTypeCount').textContent = _listInvIds.length;
+  $('bulkTypeBar').classList.toggle('hidden', !_listInvIds.length);
+}
+
+// 지금 보고 있는 목록에서 청첩장 받은 분 전체의 종류를 한 번에 지정
+var _listInvIds = [];
+function bulkSetType(v) {
+  var ids = _listInvIds.slice();
+  if (!ids.length) return;
+  ask('청첩장 종류 한꺼번에 지정', '지금 목록의 청첩장 받은 분 ' + ids.length + '명을 모두 "' + invTypeLabel(v) + '"(으)로 지정할까요?\n이미 다른 종류로 지정된 분도 함께 바뀝니다.', '지정').then(function (ok) {
+    if (!ok) return;
+    var up = {};
+    ids.forEach(function (id) { up[id + '/invType'] = v; });
+    _db.ref(ROOT + '/data/guests').update(up)
+      .then(function () { toast(ids.length + '명을 ' + invTypeLabel(v) + '(으)로 지정했습니다'); })
+      .catch(function (e) { notice('저장하지 못했습니다', e.message); });
+  });
 }
 
 function bulkAdd() {
