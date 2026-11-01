@@ -38,6 +38,9 @@ function sortedGroups() {
 function guestArr() {
   return Object.keys(guests).map(function (k) { var g = guests[k]; g.id = k; return g; });
 }
+// 청첩장 종류 (guest.invType): paper 종이 / mobile 모바일 / both 둘 다, 값이 없으면 미지정
+var INV_TYPES = { paper: '종이', mobile: '모바일', both: '종이+모바일' };
+function invTypeLabel(v) { return INV_TYPES[v] || ''; }
 function byName(a, b) { return String(a.name).localeCompare(String(b.name), 'ko'); }
 
 // 설정값 (DB 값이 없으면 기본값)

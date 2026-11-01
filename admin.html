@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex, nofollow">
 <title>결혼식 하객 접수 관리자</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
-<link rel="stylesheet" href="style.css?v=4">
+<link rel="stylesheet" href="style.css?v=5">
 <style>
   body { padding-bottom: 40px; }
 
@@ -214,7 +214,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-<script src="common.js?v=4"></script>
+<script src="common.js?v=5"></script>
 <script>
 var allowed = {};
 var _settingsLoaded = false;
@@ -382,11 +382,11 @@ function exportCsv() {
     var ga = groupName(a.groupId), gb = groupName(b.groupId);
     return ga.localeCompare(gb, 'ko') || byName(a, b);
   });
-  var lines = [['이름', '그룹', '청첩장', '방문', '구분', '방문시각', '축의금', '식권', '메모', '접수자'].join(',')];
+  var lines = [['이름', '그룹', '청첩장', '청첩장 종류', '방문', '구분', '방문시각', '축의금', '식권', '메모', '접수자'].join(',')];
   function cell(v) { v = String(v == null ? '' : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }
   arr.forEach(function (g) {
     lines.push([
-      g.name, groupName(g.groupId), g.invited ? 'O' : '', g.visited ? 'O' : '',
+      g.name, groupName(g.groupId), g.invited ? 'O' : '', g.invited ? invTypeLabel(g.invType) : '', g.visited ? 'O' : '',
       g.visited ? (g.invited ? '청첩장 방문' : '명단 외 방문') : '미방문',
       g.visited && g.visitedAt ? new Date(g.visitedAt).toLocaleString('ko-KR') : '',
       g.visited ? (Number(g.gift) || 0) : '', g.visited ? (Number(g.tickets) || 0) : '', g.memo || '', g.visitBy || ''

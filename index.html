@@ -14,7 +14,7 @@
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
-<link rel="stylesheet" href="style.css?v=4">
+<link rel="stylesheet" href="style.css?v=5">
 </head>
 <body>
 
@@ -76,6 +76,12 @@
         <select id="bulkGroup" class="input" data-title="그룹 선택"></select>
       </div>
       <div class="field">
+        <label>청첩장 종류</label>
+        <div class="seg" id="bulkType">
+          <button type="button" data-v="paper" class="on">종이</button><button type="button" data-v="mobile">모바일</button><button type="button" data-v="both">둘 다</button>
+        </div>
+      </div>
+      <div class="field">
         <label>이름 <small>한 줄에 한 명씩, 여러 명 한꺼번에 가능</small></label>
         <textarea id="bulkNames" class="input" rows="4" placeholder="홍길동&#10;김철수"></textarea>
       </div>
@@ -90,6 +96,8 @@
           <option value="inv-yes">청첩장 · 방문</option>
           <option value="inv-no">청첩장 · 미방문</option>
           <option value="walk">명단 외 방문</option>
+          <option value="paper">종이 청첩장</option>
+          <option value="mobile">모바일 청첩장</option>
         </select>
       </div>
       <input id="fName" class="input" type="search" placeholder="이름 검색" oninput="renderList()" autocomplete="off">
@@ -148,8 +156,14 @@
       <select id="mGroup" class="input" data-title="그룹 선택"></select>
     </div>
     <div class="checks">
-      <label><input type="checkbox" id="mInvited"> 청첩장 받음</label>
+      <label><input type="checkbox" id="mInvited" onchange="syncInvFields()"> 청첩장 받음</label>
       <label><input type="checkbox" id="mVisited" onchange="syncVisitFields()"> 식장 방문</label>
+    </div>
+    <div class="field" id="mInvFields">
+      <label>청첩장 종류</label>
+      <div class="seg" id="mType">
+        <button type="button" data-v="paper">종이</button><button type="button" data-v="mobile">모바일</button><button type="button" data-v="both">둘 다</button>
+      </div>
     </div>
     <div id="mVisitFields" class="visit-box">
       <div class="field">
@@ -188,7 +202,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-<script src="common.js?v=4"></script>
+<script src="common.js?v=5"></script>
 <script>
 var _loaded = { groups: false, guests: false };
 var _tab = 'recv';
@@ -261,8 +275,9 @@ function guestLi(g) {
                         : '<span class="badge b-wait">미방문</span>';
   var avCls = g.visited ? (g.invited ? 'ok' : 'walk') : '';
   var right = g.visited ? '<div class="amt">' + manwon(g.gift) + '<small>식권 ' + (Number(g.tickets) || 0) + '장</small></div>' : '';
+  var inv = g.invited && invTypeLabel(g.invType) ? ' <span class="badge b-inv">' + invTypeLabel(g.invType) + '</span>' : '';
   return '<li onclick="openGuest(\'' + g.id + '\')"><div class="av ' + avCls + '">' + esc(String(g.name).charAt(0)) + '</div>' +
-    '<div class="body"><div class="nm">' + esc(g.name) + ' ' + badge + '</div>' +
+    '<div class="body"><div class="nm">' + esc(g.name) + ' ' + badge + inv + '</div>' +
     '<div class="meta">' + esc(groupName(g.groupId)) + (g.memo ? ' · ' + esc(g.memo) : '') +
     (g.visited && g.visitedAt ? ' · ' + hm(g.visitedAt) : '') + '</div></div>' + right + '</li>';
 }
@@ -300,6 +315,8 @@ function renderList() {
     if (fs === 'inv-yes' && !(g.invited && g.visited)) return false;
     if (fs === 'inv-no' && !(g.invited && !g.visited)) return false;
     if (fs === 'walk' && !(!g.invited && g.visited)) return false;
+    if (fs === 'paper' && !(g.invited && (g.invType === 'paper' || g.invType === 'both'))) return false;
+    if (fs === 'mobile' && !(g.invited && (g.invType === 'mobile' || g.invType === 'both'))) return false;
     if (q && String(g.name).replace(/\s/g, '').indexOf(q) < 0) return false;
     return true;
   }).sort(byName);
@@ -318,7 +335,7 @@ function bulkAdd() {
   names.forEach(function (n) {
     if (exist[n]) { skipped.push(n); return; }
     exist[n] = true;
-    up[_db.ref().push().key] = { name: n, groupId: gid, invited: true, visited: false, gift: 0, tickets: 0, memo: '',
+    up[_db.ref().push().key] = { name: n, groupId: gid, invited: true, invType: segGet('bulkType'), visited: false, gift: 0, tickets: 0, memo: '',
       createdAt: firebase.database.ServerValue.TIMESTAMP, by: _me.email };
     added++;
   });
@@ -339,6 +356,7 @@ function openGuest(id) {
   $('mName').value = g.name || '';
   $('mGroup').value = groups[g.groupId] ? g.groupId : (sortedGroups()[0] || {}).id || '';
   $('mInvited').checked = !!g.invited;
+  segSet('mType', g.invType || '');
   var visited = !!g.visited || fromRecv;
   $('mVisited').checked = visited;
   $('mGift').value = g.visited && g.gift ? Number(g.gift).toLocaleString('ko-KR') : '';
@@ -359,6 +377,7 @@ function openWalkIn() {
   var etc = sortedGroups().filter(function (g) { return g.name === '기타'; })[0];
   $('mGroup').value = etc ? etc.id : ((sortedGroups()[0] || {}).id || '');
   $('mInvited').checked = false;
+  segSet('mType', '');
   $('mVisited').checked = true;
   $('mGift').value = '';
   $('mTickets').value = defaultTickets();
@@ -371,12 +390,24 @@ function openWalkIn() {
 }
 
 function openModal() {
-  renderQuick(); syncVisitFields();
+  renderQuick(); syncVisitFields(); syncInvFields();
   $('modalBg').classList.remove('hidden');
 }
 function closeModal() { $('modalBg').classList.add('hidden'); _edit = null; }
 
 function syncVisitFields() { $('mVisitFields').classList.toggle('hidden', !$('mVisited').checked); }
+function syncInvFields() { $('mInvFields').classList.toggle('hidden', !$('mInvited').checked); }
+
+// 종류 선택 버튼 (종이/모바일/둘 다). 이미 선택된 것을 다시 누르면 해제
+function segGet(id) { var b = $(id).querySelector('.on'); return b ? b.getAttribute('data-v') : ''; }
+function segSet(id, v) { $(id).querySelectorAll('button').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-v') === v); }); }
+['bulkType', 'mType'].forEach(function (id) {
+  $(id).addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b) return;
+    var v = b.getAttribute('data-v');
+    segSet(id, id === 'mType' && segGet(id) === v ? '' : v);
+  });
+});
 
 function parseGift() { return parseInt(String($('mGift').value).replace(/[^\d]/g, ''), 10) || 0; }
 function onGiftInput() {
@@ -404,7 +435,7 @@ function saveModal() {
   var visited = $('mVisited').checked;
   var tickets = Math.max(0, parseInt($('mTickets').value, 10) || 0);
   var data = {
-    name: name, groupId: gid, invited: $('mInvited').checked, visited: visited,
+    name: name, groupId: gid, invited: $('mInvited').checked, invType: $('mInvited').checked ? segGet('mType') : '', visited: visited,
     gift: visited ? parseGift() : 0, tickets: visited ? tickets : 0,
     memo: $('mMemo').value.trim(),
     updatedAt: firebase.database.ServerValue.TIMESTAMP, updatedBy: _me.email
@@ -462,12 +493,23 @@ function deleteGuest() {
 }
 
 /* ---------- 통계 ---------- */
+// 청첩장 종류별 인원 (예: 종이 120 · 모바일 60 · 둘 다 10 · 미지정 3)
+function invBreakdown() {
+  var c = { paper: 0, mobile: 0, both: 0, none: 0 };
+  guestArr().forEach(function (g) { if (g.invited) c[INV_TYPES[g.invType] ? g.invType : 'none']++; });
+  var parts = [];
+  if (c.paper) parts.push('종이 ' + c.paper);
+  if (c.mobile) parts.push('모바일 ' + c.mobile);
+  if (c.both) parts.push('둘 다 ' + c.both);
+  if (c.none) parts.push('미지정 ' + c.none);
+  return parts.join(' · ');
+}
 function pct(a, b) { return b ? Math.round(a / b * 1000) / 10 + '%' : '-'; }
 
 function renderStats() {
   var t = calcTotals();
   $('kpis').innerHTML = [
-    ['청첩장 배포', t.invited + '명', ''],
+    ['청첩장 배포', t.invited + '명', invBreakdown()],
     ['청첩장 받고 방문', t.invVisited + '명', '방문율 ' + pct(t.invVisited, t.invited) + ' · 미방문 ' + (t.invited - t.invVisited) + '명'],
     ['명단 외 방문', t.walk + '명', ''],
     ['총 방문', t.visited + '명', ''],
