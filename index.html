@@ -104,7 +104,7 @@
       <input id="fName" class="input" type="search" placeholder="이름 검색" oninput="renderList()" autocomplete="off">
       <div class="muted" id="listCount" style="margin:10px 0 2px"></div>
       <div class="bulk-type" id="bulkTypeBar">
-        <span>지금 목록의 청첩장 받은 분 <b id="bulkTypeCount">0</b>명을</span>
+        <span>지금 목록의 <b id="bulkTypeCount">0</b>명을 (명단 외 방문자 제외)</span>
         <div class="row">
           <button type="button" class="btn sm" onclick="bulkSetType('paper')">종이</button>
           <button type="button" class="btn sm" onclick="bulkSetType('mobile')">모바일</button>
@@ -331,13 +331,15 @@ function renderList() {
     if (fs === 'walk' && !(!g.invited && g.visited)) return false;
     if (fs === 'paper' && !(g.invited && (g.invType === 'paper' || g.invType === 'both'))) return false;
     if (fs === 'mobile' && !(g.invited && (g.invType === 'mobile' || g.invType === 'both'))) return false;
-    if (fs === 'notype' && !(g.invited && !INV_TYPES[g.invType])) return false;
+    // 미지정: 청첩장 받았는데 종류가 없는 분 + 청첩장·방문 표시가 모두 없는 분
+    if (fs === 'notype' && !((g.invited && !INV_TYPES[g.invType]) || (!g.invited && !g.visited))) return false;
     if (q && String(g.name).replace(/\s/g, '').indexOf(q) < 0) return false;
     return true;
   }).sort(byName);
   $('listCount').textContent = arr.length + '명';
   $('guestList').innerHTML = arr.length ? arr.map(guestLi).join('') : '<div class="empty">해당하는 사람이 없습니다.</div>';
-  _listInvIds = arr.filter(function (g) { return g.invited; }).map(function (g) { return g.id; });
+  // 한꺼번에 지정 대상: 청첩장 받은 분 + 청첩장·방문 표시가 모두 없는 분 (명단 외 방문자는 제외)
+  _listInvIds = arr.filter(function (g) { return g.invited || !g.visited; }).map(function (g) { return g.id; });
   $('bulkTypeCount').textContent = _listInvIds.length;
   $('bulkTypeBar').classList.toggle('hidden', !_listInvIds.length);
 }
@@ -347,10 +349,10 @@ var _listInvIds = [];
 function bulkSetType(v) {
   var ids = _listInvIds.slice();
   if (!ids.length) return;
-  ask('청첩장 종류 한꺼번에 지정', '지금 목록의 청첩장 받은 분 ' + ids.length + '명을 모두 "' + invTypeLabel(v) + '"(으)로 지정할까요?\n이미 다른 종류로 지정된 분도 함께 바뀝니다.', '지정').then(function (ok) {
+  ask('청첩장 종류 한꺼번에 지정', '지금 목록의 ' + ids.length + '명을 모두 "' + invTypeLabel(v) + '"(으)로 지정할까요?\n청첩장 받음으로 표시되고, 이미 다른 종류로 지정된 분도 함께 바뀝니다.', '지정').then(function (ok) {
     if (!ok) return;
     var up = {};
-    ids.forEach(function (id) { up[id + '/invType'] = v; });
+    ids.forEach(function (id) { up[id + '/invType'] = v; up[id + '/invited'] = true; });
     _db.ref(ROOT + '/data/guests').update(up)
       .then(function () { toast(ids.length + '명을 ' + invTypeLabel(v) + '(으)로 지정했습니다'); })
       .catch(function (e) { notice('저장하지 못했습니다', e.message); });
@@ -423,14 +425,15 @@ function openWalkIn() {
 }
 
 function openModal() {
-  renderQuick(); syncVisitFields(); syncInvFields();
+  renderQuick(); syncVisitFields();
   $('modalBg').classList.remove('hidden');
   openLayer('modal', function () { $('modalBg').classList.add('hidden'); _edit = null; });
 }
 function closeModal() { if (!closeLayer('modal')) { $('modalBg').classList.add('hidden'); _edit = null; } }
 
 function syncVisitFields() { $('mVisitFields').classList.toggle('hidden', !$('mVisited').checked); }
-function syncInvFields() { $('mInvFields').classList.toggle('hidden', !$('mInvited').checked); }
+// 종류 버튼은 항상 보이고, '청첩장 받음'을 끄면 종류 선택도 지움
+function syncInvFields() { if (!$('mInvited').checked) segSet('mType', ''); }
 
 // 종류 선택 버튼 (종이/모바일/둘 다). 이미 선택된 것을 다시 누르면 해제
 function segGet(id) { var b = $(id).querySelector('.on'); return b ? b.getAttribute('data-v') : ''; }
@@ -440,6 +443,8 @@ function segSet(id, v) { $(id).querySelectorAll('button').forEach(function (b) {
     var b = e.target.closest('button'); if (!b) return;
     var v = b.getAttribute('data-v');
     segSet(id, id === 'mType' && segGet(id) === v ? '' : v);
+    // 종류를 고르면 '청첩장 받음'도 자동 체크
+    if (id === 'mType' && segGet(id)) $('mInvited').checked = true;
   });
 });
 
