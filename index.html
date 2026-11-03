@@ -124,6 +124,10 @@
       <div class="tbl-wrap"><table class="tbl" id="groupTable"></table></div>
     </div>
     <div class="card">
+      <h2>청첩장 종류별 <span class="muted">청첩장 받은 분 기준</span></h2>
+      <div class="tbl-wrap"><table class="tbl" id="typeTable"></table></div>
+    </div>
+    <div class="card">
       <h2>축의금 액수별 인원</h2>
       <div id="amountDist"></div>
     </div>
@@ -585,6 +589,28 @@ function renderStats() {
   html += '<tr class="sum"><td>합계</td><td>' + t.invited + '</td><td>' + visitCell(t.invVisited, t.invited) +
     '</td><td>' + t.walk + '</td><td>' + man(t.gift) + '</td><td>' + t.tickets + '</td></tr>';
   $('groupTable').innerHTML = html;
+
+  // 청첩장 종류별 (종이 / 모바일 / 둘 다 / 미지정)
+  var tr = { paper: {}, mobile: {}, both: {}, none: {} };
+  Object.keys(tr).forEach(function (k) { tr[k] = { inv: 0, vis: 0, gift: 0, tickets: 0 }; });
+  guestArr().forEach(function (g) {
+    if (!g.invited) return;
+    var r = tr[INV_TYPES[g.invType] ? g.invType : 'none'];
+    r.inv++;
+    if (g.visited) { r.vis++; r.gift += Number(g.gift) || 0; r.tickets += Number(g.tickets) || 0; }
+  });
+  var th = '<tr><th>종류</th><th>청첩장</th><th>방문</th><th>미방문</th><th>축의금<small>만원</small></th><th>식권</th></tr>';
+  [['paper', '종이'], ['mobile', '모바일'], ['both', '둘 다'], ['none', '미지정']].forEach(function (k) {
+    var r = tr[k[0]];
+    if (k[0] === 'none' && !r.inv) return;
+    th += '<tr><td>' + k[1] + '</td><td>' + r.inv + '</td><td>' + visitCell(r.vis, r.inv) + '</td><td>' + (r.inv - r.vis) +
+      '</td><td>' + man(r.gift) + '</td><td>' + r.tickets + '</td></tr>';
+  });
+  var ts = { inv: 0, vis: 0, gift: 0, tickets: 0 };
+  Object.keys(tr).forEach(function (k) { ts.inv += tr[k].inv; ts.vis += tr[k].vis; ts.gift += tr[k].gift; ts.tickets += tr[k].tickets; });
+  th += '<tr class="sum"><td>합계</td><td>' + ts.inv + '</td><td>' + visitCell(ts.vis, ts.inv) + '</td><td>' + (ts.inv - ts.vis) +
+    '</td><td>' + man(ts.gift) + '</td><td>' + ts.tickets + '</td></tr>';
+  $('typeTable').innerHTML = th;
 
   var dist = {};
   guestArr().forEach(function (g) { if (g.visited) { var a = Number(g.gift) || 0; dist[a] = (dist[a] || 0) + 1; } });
