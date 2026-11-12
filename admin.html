@@ -6,22 +6,30 @@
 <meta name="robots" content="noindex, nofollow">
 <title>결혼식 하객 접수 관리자</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
-<link rel="stylesheet" href="style.css?v=6">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap">
+<link rel="stylesheet" href="style.css?v=7">
 <style>
-  /* 관리자 화면은 연보라·하늘빛 (접수 화면 분홍과 구분, 관리자 썸네일과 같은 색) */
+  /* 관리자 화면은 연보라·하늘빛 (접수 화면 분홍과 구분, 관리자 썸네일과 같은 톤) */
   :root {
+    --bg: #f6f3ff;
+    --text: #3d3768;
+    --sub: #7470a0;
     --accent: #7a6ad8;
     --accent-dark: #6152c4;
     --accent-soft: #ece8fd;
     --line: #e4e1f3;
     --gray-soft: #f0eff8;
+    --page-bg:
+      radial-gradient(circle at 0% 0%, rgba(216,204,255,.85) 0, rgba(216,204,255,0) 420px),
+      radial-gradient(circle at 100% 100%, rgba(196,226,255,.9) 0, rgba(196,226,255,0) 460px),
+      radial-gradient(circle at 100% 0%, rgba(255,220,236,.5) 0, rgba(255,220,236,0) 320px),
+      linear-gradient(135deg, #f6f3ff 0%, #f7fbff 50%, #eef6ff 100%);
+    --f1: #b7a6f2; --f2: #a9d0f7; --f3: #d9cffb; --f4: #f7c6dc;
+    --pt1: #b9aaf0; --pt2: #9cc8f2;
+    --shadow: 0 8px 24px rgba(120,110,210,.10);
+    --grad: linear-gradient(120deg, #8f7fe6, #6aa8ef);
   }
-  html, body { background: #f4f2fd; }
-  body { padding-bottom: 40px; min-height: 100vh;
-    background:
-      radial-gradient(circle at 0% 0%, rgba(216,204,255,.75) 0, rgba(216,204,255,0) 420px),
-      radial-gradient(circle at 100% 100%, rgba(196,226,255,.8) 0, rgba(196,226,255,0) 460px),
-      linear-gradient(160deg, #f6f3ff 0%, #f7fbff 55%, #eef6ff 100%) fixed; }
+  body { padding-bottom: 40px; }
 
   /* 상단 */
   .ad-top { position: sticky; top: 0; z-index: 20; background: rgba(255,255,255,.8); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
@@ -34,12 +42,12 @@
 
   /* 요약 */
   .sum { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 18px; }
-  .sum div { background: #fff; border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; }
+  .sum div { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 12px 14px; box-shadow: var(--shadow); }
   .sum b { display: block; font-size: 22px; font-weight: 800; letter-spacing: -0.4px; }
   .sum span { font-size: 12.5px; color: var(--sub); font-weight: 600; }
 
   /* 섹션 */
-  .sec { background: #fff; border: 1px solid var(--line); border-radius: 16px; margin-bottom: 16px; overflow: hidden; }
+  .sec { background: #fff; border: 1px solid var(--line); border-radius: 18px; margin-bottom: 16px; overflow: hidden; box-shadow: var(--shadow); }
   .sec-hd { padding: 16px 18px 4px; }
   .sec-hd h2 { font-size: 15.5px; font-weight: 800; }
   .sec-hd p { font-size: 13px; color: var(--sub); margin-top: 3px; line-height: 1.5; }
@@ -51,7 +59,7 @@
   .inp:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
   .b { border: 1px solid var(--line); background: #fff; color: var(--text); border-radius: 10px; padding: 10px 16px; font-weight: 700; font-size: 14px; white-space: nowrap; }
   .b:hover { background: #faf8f6; }
-  .b.pri { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .b.pri { background: var(--grad); border-color: transparent; color: #fff; }
   .b.pri:hover { background: var(--accent-dark); }
   .b.full { width: 100%; padding: 12px; }
   .b.ghost { border-color: transparent; background: none; color: var(--sub); padding: 7px 10px; font-size: 13px; }
@@ -128,8 +136,11 @@
 <div id="appScreen" class="hidden">
   <header class="ad-top">
     <div class="in">
-      <h1 class="app-title">결혼식 하객 접수</h1>
-      <span class="ad-pill">관리자</span>
+      <div style="min-width:0">
+        <div class="script" style="font-size:21px; line-height:1; margin-bottom:2px">Wedding Day</div>
+        <h1 class="app-title">결혼식 하객 접수</h1>
+      </div>
+      <span class="ad-pill" style="align-self:flex-end; margin-bottom:2px">관리자</span>
       <a href="index.html">접수 화면</a>
     </div>
   </header>
@@ -227,7 +238,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-<script src="common.js?v=6"></script>
+<script src="common.js?v=7"></script>
 <script>
 var allowed = {};
 var _settingsLoaded = false;

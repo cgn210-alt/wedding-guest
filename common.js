@@ -56,6 +56,37 @@ function applyTitle() {
   document.title = appTitle() + (document.body.getAttribute('data-title-suffix') || '');
 }
 
+/* ---------- 배경 꽃 장식 (썸네일과 같은 느낌) ---------- */
+// 색은 CSS 변수(--f1~--f4, --pt1, --pt2, --hrt)로 정해 접수(분홍)·관리자(보라) 화면이 같은 그림을 다른 색으로 씀
+function addDecoBackground() {
+  if (document.querySelector('.deco-bg')) return;
+  var flower = function (x, y, s, c) {
+    var p = '';
+    for (var i = 0; i < 5; i++) p += '<ellipse cx="0" cy="-22" rx="15" ry="22" transform="rotate(' + (i * 72) + ')"/>';
+    return '<g transform="translate(' + x + ' ' + y + ') scale(' + s + ')"><g style="fill:var(' + c + ')">' + p + '</g>' +
+      '<circle r="10" fill="#ffd36b"/><circle r="5" fill="#f6b13c"/></g>';
+  };
+  var leaf = function (x, y, r) {
+    return '<g transform="translate(' + x + ' ' + y + ') rotate(' + r + ')"><path d="M0 0 C 14 -18, 40 -18, 54 0 C 40 18, 14 18, 0 0 Z" fill="#a9d4a5"/>' +
+      '<path d="M4 0 L 50 0" stroke="#86bb82" stroke-width="2"/></g>';
+  };
+  // 왼쪽 위 꽃다발 (오른쪽 아래는 같은 그림을 180도 돌려 사용)
+  var cluster = leaf(150, 120, -30) + leaf(80, 170, 200) + leaf(200, 40, 20) +
+    flower(90, 80, 1.5, '--f1') + flower(185, 110, 1.05, '--f2') + flower(60, 205, 0.9, '--f3') + flower(250, 50, 0.75, '--f4');
+  var el = document.createElement('div');
+  el.className = 'deco-bg';
+  el.innerHTML =
+    '<svg class="tl" width="300" height="250" viewBox="0 0 300 250">' + cluster + '</svg>' +
+    '<svg class="br" width="300" height="250" viewBox="0 0 300 250">' + cluster + '</svg>' +
+    // 흩날리는 꽃잎과 금빛 점 (화면 비율에 따라 찌그러지지 않도록 % 위치의 작은 요소로)
+    [[22, 18, '--pt1', 25], [6, 52, '--pt2', -40], [90, 30, '--pt1', 60], [70, 9, '--pt2', -15], [95, 62, '--pt1', 30], [28, 88, '--pt2', 80], [62, 94, '--pt1', -60], [3, 80, '--pt1', 10]]
+      .map(function (p) { return '<i class="pt" style="left:' + p[0] + '%;top:' + p[1] + '%;background:var(' + p[2] + ');transform:rotate(' + p[3] + 'deg)"></i>'; }).join('') +
+    [[80, 18], [15, 66], [50, 5], [96, 86], [40, 40]]
+      .map(function (p) { return '<i class="dot" style="left:' + p[0] + '%;top:' + p[1] + '%"></i>'; }).join('');
+  document.body.insertBefore(el, document.body.firstChild);
+}
+addDecoBackground();
+
 /* ---------- 뒤로 가기 (휴대폰 뒤로 버튼 = 바로 전 단계) ---------- */
 // 창(입력 창·선택 창·확인 창)을 열 때마다 방문 기록을 하나 쌓아, 뒤로 가기를 누르면 그 창만 닫힘
 // 창이 없을 때는 history.state.tab 으로 이전 탭에 돌아감 (페이지가 window.onPopTab 을 정의)

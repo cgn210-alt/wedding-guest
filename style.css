@@ -1,29 +1,50 @@
 /* 결혼식 하객 접수 앱 — 공용 스타일 */
 :root {
-  --bg: #f7f6f4;
+  /* 접수 화면: 접수 썸네일과 같은 분홍·복숭아빛 톤 */
+  --bg: #fff6f8;
   --card: #ffffff;
-  --line: #ebe7e2;
-  --text: #2b2724;
-  --sub: #7a716a;
-  --accent: #9f4a5c;
-  --accent-dark: #833c4b;
-  --accent-soft: #f6e8eb;
+  --line: #f1e3e7;
+  --text: #4a2f38;
+  --sub: #94707b;
+  --accent: #c2507a;
+  --accent-dark: #a63f66;
+  --accent-soft: #fde8ef;
   --ok: #15803d;
   --ok-soft: #dcfce7;
   --warn: #b45309;
   --warn-soft: #fef3c7;
-  --gray-soft: #f1eeea;
+  --gray-soft: #f8eff2;
+  --page-bg:
+    radial-gradient(circle at 0% 0%, rgba(255,214,224,.85) 0, rgba(255,214,224,0) 420px),
+    radial-gradient(circle at 100% 100%, rgba(255,222,200,.85) 0, rgba(255,222,200,0) 460px),
+    radial-gradient(circle at 100% 0%, rgba(232,222,255,.55) 0, rgba(232,222,255,0) 320px),
+    linear-gradient(135deg, #fff6f8 0%, #fffaf3 50%, #fff3ee 100%);
+  /* 배경 꽃 장식 색 */
+  --f1: #f7a1b6; --f2: #ffc4a8; --f3: #f9c7d4; --f4: #e7c9f2;
+  --pt1: #f6a5b9; --pt2: #ffb990;
+  --shadow: 0 8px 24px rgba(214,120,150,.10);
+  --grad: linear-gradient(120deg, #e0708f, #f0957a);
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { background: var(--bg); color: var(--text); font-family: 'Pretendard', -apple-system, 'Malgun Gothic', sans-serif; font-size: 15px; -webkit-tap-highlight-color: transparent; }
-body { padding-bottom: 84px; }
+html { background: var(--bg); background-image: var(--page-bg); background-attachment: fixed; min-height: 100%; }
+html, body { color: var(--text); font-family: 'Pretendard', -apple-system, 'Malgun Gothic', sans-serif; font-size: 15px; -webkit-tap-highlight-color: transparent; }
+body { padding-bottom: 84px; background: transparent; }
+
+/* 배경 꽃 장식 (common.js 의 addDecoBackground) */
+.deco-bg { position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; }
+.deco-bg svg { position: absolute; opacity: .9; }
+.deco-bg .tl { left: -40px; top: -20px; }
+.deco-bg .br { right: -40px; bottom: 40px; transform: rotate(180deg); }
+.deco-bg .pt { position: absolute; width: 11px; height: 15px; border-radius: 60% 40% 60% 40%; opacity: .7; }
+.deco-bg .dot { position: absolute; width: 6px; height: 6px; border-radius: 50%; background: #f2c45a; opacity: .7; }
+.script { font-family: 'Great Vibes', cursive; font-weight: 400; color: var(--accent); }
 button { font-family: inherit; font-size: inherit; cursor: pointer; }
 input, select, textarea { font-family: inherit; font-size: 16px; }
 .hidden { display: none !important; }
 .muted { color: var(--sub); font-size: 13px; }
 
 /* 상단 */
-.top { position: sticky; top: 0; z-index: 20; background: rgba(255,255,255,.92); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
+.top { position: sticky; top: 0; z-index: 20; background: rgba(255,255,255,.78); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
 .top .in { max-width: 760px; margin: 0 auto; padding: 13px 16px 12px; }
 .top h1 { font-size: 17px; font-weight: 800; letter-spacing: -0.3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .top .mini { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 7px; }
@@ -36,7 +57,7 @@ input, select, textarea { font-family: inherit; font-size: 16px; }
 .tabs button.on { color: var(--accent); background: var(--accent-soft); }
 
 /* 카드 */
-.card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 18px; margin-bottom: 14px; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 18px; margin-bottom: 14px; box-shadow: var(--shadow); }
 .card h2 { font-size: 15.5px; font-weight: 800; margin-bottom: 12px; }
 .card h2 .muted { font-weight: 600; }
 
@@ -106,11 +127,11 @@ select.input { appearance: none; -webkit-appearance: none; padding-right: 36px; 
 
 /* 통계 */
 .kpis { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 14px; }
-.kpi { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 14px 16px; }
+.kpi { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 14px 16px; box-shadow: var(--shadow); }
 .kpi .k { font-size: 12.5px; color: var(--sub); font-weight: 700; }
 .kpi .v { font-size: 23px; font-weight: 800; margin-top: 5px; letter-spacing: -0.5px; }
 .kpi .s { font-size: 12px; color: var(--sub); margin-top: 3px; }
-.kpi.wide { grid-column: span 2; background: var(--accent); border-color: var(--accent); color: #fff; }
+.kpi.wide { grid-column: span 2; background: var(--grad); border-color: transparent; color: #fff; }
 .kpi.wide .k, .kpi.wide .s { color: rgba(255,255,255,.82); }
 .kpi.wide .v { font-size: 28px; }
 @media (min-width: 640px) { .kpis { grid-template-columns: repeat(4, 1fr); } }
