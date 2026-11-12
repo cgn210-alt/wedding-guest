@@ -20,6 +20,18 @@
   .script { font-family: 'Great Vibes', cursive; font-size: 66px; line-height: 1; color: #e2738f; }
   h1 { font-size: 66px; font-weight: 700; letter-spacing: 2px; margin-top: 14px; color: #5e3343; }
   .sub { font-family: 'Gowun Dodum', sans-serif; font-size: 27px; color: #9a6b78; margin-top: 18px; }
+  /* 관리자용: 연보라·하늘빛으로 구분 */
+  body.admin { color: #3f3a6b;
+    background:
+      radial-gradient(circle at 18% 22%, rgba(216,204,255,.95) 0, rgba(216,204,255,0) 38%),
+      radial-gradient(circle at 85% 80%, rgba(196,226,255,.95) 0, rgba(196,226,255,0) 40%),
+      radial-gradient(circle at 80% 15%, rgba(255,220,236,.6) 0, rgba(255,220,236,0) 30%),
+      linear-gradient(135deg, #f6f3ff 0%, #f7fbff 50%, #eef6ff 100%); }
+  body.admin .card { box-shadow: 0 18px 50px rgba(120,110,210,.2); }
+  body.admin .script { color: #8a7bdc; }
+  body.admin h1 { color: #3d3768; }
+  body.admin .sub { color: #7470a0; }
+  body.admin .pill { background: linear-gradient(90deg, #8f7fe6, #6aa8ef); box-shadow: 0 6px 16px rgba(120,110,230,.35); }
   .pill { display: inline-block; margin-top: 22px; font-family: 'Gowun Dodum', sans-serif; font-size: 22px; font-weight: 700; color: #fff;
     background: linear-gradient(90deg, #f28aa5, #f5a87f); padding: 9px 26px; border-radius: 999px; box-shadow: 0 6px 16px rgba(242,138,165,.35); }
 </style>
@@ -101,6 +113,18 @@
 </div>
 <script>
   if (location.search.indexOf('admin') >= 0) {
+    document.body.classList.add('admin');
+    // 꽃·꽃잎·하트 색을 보라·하늘 계열로 바꿈
+    var swap = { '#f7a1b6': '#b7a6f2', '#ffc4a8': '#a9d0f7', '#f9c7d4': '#d9cffb', '#e7c9f2': '#f7c6dc',
+                 '#f6a5b9': '#b9aaf0', '#ffb990': '#9cc8f2', '#f28aa5': '#9a8be8' };
+    document.querySelectorAll('[style*="color"], g[fill]').forEach(function (el) {
+      var c = el.style.color && el.style.color.replace(/rgb\((\d+), (\d+), (\d+)\)/, function (m, r, g, b) {
+        return '#' + [r, g, b].map(function (x) { return (+x).toString(16).padStart(2, '0'); }).join('');
+      });
+      if (c && swap[c]) el.style.color = swap[c];
+      var f = el.getAttribute('fill');
+      if (f && swap[f]) el.setAttribute('fill', swap[f]);
+    });
     document.getElementById('title').textContent = '하객 접수 관리자';
     document.getElementById('desc').textContent = '앱 설정 · 그룹 · 접수 담당자 · 자료 내보내기';
     document.getElementById('tag').textContent = '관리자 전용';
