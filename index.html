@@ -369,7 +369,24 @@ function renderRecv() {
 
 /* ---------- QR 초대 확인 ---------- */
 // 카메라로 초대 확인 카드의 QR(카드 주소)을 읽어 그분의 접수 창을 엶. QR 해석은 jsQR 를 처음 쓸 때 불러옴
-var _scan = null;   // { stream, raf, canvas, busy }
+// 허용 창이 매번 뜨지 않도록 한 번 켠 카메라는 접수하는 동안 유지하고, 3분 동안 안 쓰거나 화면을 벗어나면 끔
+var _scan = null;   // 스캔 창이 열려 있는 동안 { raf, canvas, busy }
+var _cam = null, _camOffTimer = null, _kakaoTipShown = false;
+var CAM_IDLE_MS = 3 * 60 * 1000;
+function camAlive() { return _cam && _cam.getTracks().some(function (t) { return t.readyState === 'live'; }); }
+function getCam() {
+  clearTimeout(_camOffTimer);
+  if (camAlive()) return Promise.resolve(_cam);
+  return navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false })
+    .then(function (s) { _cam = s; return s; });
+}
+function stopCam() {
+  clearTimeout(_camOffTimer);
+  if (_cam) _cam.getTracks().forEach(function (t) { t.stop(); });
+  _cam = null;
+  $('scanVideo').srcObject = null;
+}
+document.addEventListener('visibilitychange', function () { if (document.hidden && !_scan) stopCam(); });
 function loadJsQR() {
   if (window.jsQR) return Promise.resolve();
   return new Promise(function (res, rej) {
@@ -380,16 +397,26 @@ function loadJsQR() {
   });
 }
 function openScan() {
-  $('scanMsg').textContent = '카메라를 여는 중…';
+  // 카카오톡 안의 브라우저는 카메라 허용을 기억하지 못해 매번 물으므로 크롬으로 열기를 한 번 안내
+  if (/KAKAOTALK/i.test(navigator.userAgent) && !_kakaoTipShown) {
+    _kakaoTipShown = true;
+    ask('크롬으로 여는 것을 권합니다', '카카오톡 안에서는 카메라 허용을 기억하지 못해 열 때마다 다시 묻습니다.\n크롬으로 열고 "사이트 방문 시 허용"을 한 번 누르면 다음부터는 묻지 않습니다.', '크롬으로 열기')
+      .then(function (ok) {
+        if (ok) location.href = 'kakaotalk://web/openExternal?url=' + encodeURIComponent(location.href);
+        else openScan();
+      });
+    return;
+  }
+  $('scanMsg').textContent = camAlive() ? 'QR을 네모 안에 맞춰 주세요' : '카메라를 여는 중…';
   $('scanBg').classList.remove('hidden');
-  openLayer('scan', function () { $('scanBg').classList.add('hidden'); stopScan(); });
+  openLayer('scan', function () { $('scanBg').classList.add('hidden'); pauseScan(); });
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { scanFail(); return; }
-  Promise.all([loadJsQR(), navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false })])
+  Promise.all([loadJsQR(), getCam()])
     .then(function (r) {
-      if ($('scanBg').classList.contains('hidden')) { r[1].getTracks().forEach(function (t) { t.stop(); }); return; }
-      _scan = { stream: r[1], canvas: document.createElement('canvas'), busy: false };
+      if ($('scanBg').classList.contains('hidden')) { pauseScan(); return; }
+      _scan = { canvas: document.createElement('canvas'), busy: false };
       var v = $('scanVideo');
-      v.srcObject = r[1];
+      if (v.srcObject !== r[1]) v.srcObject = r[1];
       v.play();
       $('scanMsg').textContent = 'QR을 네모 안에 맞춰 주세요';
       scanLoop();
@@ -432,14 +459,15 @@ function onScanned(text) {
     toast(g.visited ? g.name + ' 님은 이미 접수되었습니다' : '초대 확인: ' + g.name + ' 님');
   }, 120);
 }
-function stopScan() {
-  if (!_scan) return;
-  cancelAnimationFrame(_scan.raf);
-  _scan.stream.getTracks().forEach(function (t) { t.stop(); });
-  $('scanVideo').srcObject = null;
+// 스캔 창을 닫을 때: 읽기만 멈추고 카메라는 잠시 켜 둠 (다음 하객 때 허용 창 없이 바로 켜지도록)
+function pauseScan() {
+  if (_scan) cancelAnimationFrame(_scan.raf);
   _scan = null;
+  $('scanVideo').pause();
+  clearTimeout(_camOffTimer);
+  _camOffTimer = setTimeout(stopCam, CAM_IDLE_MS);
 }
-function closeScan() { if (!closeLayer('scan')) { $('scanBg').classList.add('hidden'); stopScan(); } }
+function closeScan() { if (!closeLayer('scan')) { $('scanBg').classList.add('hidden'); pauseScan(); } }
 
 /* ---------- 명단 ---------- */
 function renderGroupSelects() {
