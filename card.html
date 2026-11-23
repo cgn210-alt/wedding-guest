@@ -31,7 +31,7 @@
   .ic .qr { margin: 22px auto 0; width: 216px; height: 216px; padding: 12px; background: #fff; border-radius: 18px; border: 1px solid var(--line); }
   .ic .qr img, .ic .qr canvas { width: 192px !important; height: 192px !important; display: block; }
   .ic p { font-size: 14.5px; color: var(--sub); line-height: 1.65; margin-top: 18px; word-break: keep-all; }
-  .ic .tip { font-size: 12.5px; color: var(--sub); opacity: .85; margin-top: 10px; }
+  .ic p.msg { font-size: 17px; font-weight: 700; color: #5e3343; line-height: 1.6; margin-top: 20px; }
   /* 모바일 청첩장 썸네일 */
   .inv { display: block; margin-top: 22px; border: 1px solid var(--line); border-radius: 18px; overflow: hidden; text-decoration: none; color: inherit; background: #fff; text-align: left; }
   .inv img { width: 100%; aspect-ratio: 1.91; object-fit: cover; display: block; background: var(--gray-soft); }
@@ -76,8 +76,7 @@ var INVITATION = {
         '<h1>' + esc(c.name) + '<small>님</small></h1>' +
         '<div class="ok">축복의 자리에 모십니다</div>' +
         '<div class="qr" id="qr"></div>' +
-        '<p>귀한 걸음에 감사드립니다.<br>예식 당일 접수대에서 이 화면을 보여 주세요.</p>' +
-        '<div class="tip">화면 밝기를 올려 주시면 더 빨리 확인됩니다.</div>' +
+        '<p class="msg">귀한 걸음에 감사드립니다.<br>예식 당일 접수대에서<br>이 화면을 보여 주세요.</p>' +
         '<a class="inv" href="' + INVITATION.url + '">' +
           '<img src="' + INVITATION.image + '" alt="모바일 청첩장 사진">' +
           '<div class="t">' + esc(INVITATION.title) + '</div><div class="d">' + esc(INVITATION.date) + '</div>' +
