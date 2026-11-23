@@ -6,7 +6,7 @@
 <meta name="robots" content="noindex, nofollow">
 <title>결혼식 하객 접수 관리자</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Noto+Serif+KR:wght@700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap">
 <link rel="stylesheet" href="style.css?v=9">
 <style>
   /* 관리자 화면은 연보라·하늘빛 (접수 화면 분홍과 구분, 관리자 썸네일과 같은 톤) */
@@ -426,7 +426,6 @@ function renderCards() {
   $('cardList').innerHTML = shown.length ? shown.map(function (g) {
     var acts = g.cardToken
       ? '<button class="b kakao" onclick="shareCard(\'' + g.id + '\')">카톡 보내기</button>' +
-        '<button class="b kakao" onclick="shareCardImage(\'' + g.id + '\')">카드 사진</button>' +
         '<button class="b ghost" onclick="copyCard(\'' + g.id + '\')">복사</button>' +
         '<button class="b ghost" onclick="window.open(cardUrl(\'' + g.cardToken + '\'))">보기</button>' +
         '<button class="b ghost del" onclick="revokeCard(\'' + g.id + '\')">해제</button>'
@@ -487,118 +486,6 @@ function shareCard(id) {
   navigator.share({ text: cardMessage(g) })
     .catch(function (e) { if (e && e.name !== 'AbortError') { copyCard(id); } });
 }
-/* ---------- 초대 확인 카드 사진 ---------- */
-// card.html 과 같은 모양(이름·QR·청첩장 사진)을 이미지로 그려 카카오톡에 사진으로 보냄. 사진 속 QR 로도 접수대 확인 가능
-var INVITE = { photo: 'invite-photo.jpg', title: '주찬혁 ♥ 강규리 결혼합니다', date: '2026년 12월 19일 토요일 오전 11시 · 광화문 아펠가모' };
-function loadScript(src) {
-  return new Promise(function (res, rej) { var s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = rej; document.head.appendChild(s); });
-}
-function loadImg(src) {
-  return new Promise(function (res, rej) { var i = new Image(); i.onload = function () { res(i); }; i.onerror = rej; i.src = src; });
-}
-function roundRect(ctx, x, y, w, h, r) {
-  ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
-  ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
-}
-function drawFlower(ctx, x, y, s, color) {
-  ctx.save(); ctx.translate(x, y); ctx.scale(s, s); ctx.fillStyle = color;
-  for (var i = 0; i < 5; i++) { ctx.save(); ctx.rotate(i * Math.PI * 2 / 5); ctx.beginPath(); ctx.ellipse(0, -22, 15, 22, 0, 0, Math.PI * 2); ctx.fill(); ctx.restore(); }
-  ctx.fillStyle = '#ffd36b'; ctx.beginPath(); ctx.arc(0, 0, 10, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = '#f6b13c'; ctx.beginPath(); ctx.arc(0, 0, 5, 0, Math.PI * 2); ctx.fill();
-  ctx.restore();
-}
-function drawCardImage(g) {
-  var url = cardUrl(g.cardToken);
-  return Promise.all([
-    window.QRCode ? null : loadScript('https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js'),
-    loadImg(INVITE.photo),
-    document.fonts.load('116px "Great Vibes"', 'Wedding Day'),
-    document.fonts.load('700 92px "Noto Serif KR"', g.name + '님'),
-    document.fonts.load('700 36px Pretendard', '초대해 드린 분이 맞습니다')
-  ]).then(function (r) {
-    var photo = r[1];
-    var qd = document.createElement('div');
-    new QRCode(qd, { text: url, width: 440, height: 440, correctLevel: QRCode.CorrectLevel.M });
-    var qr = qd.querySelector('canvas');
-    var W = 1080, H = 2080, cx = W / 2;
-    var c = document.createElement('canvas'); c.width = W; c.height = H;
-    var ctx = c.getContext('2d');
-    // 배경 (접수 화면·썸네일과 같은 분홍·복숭아빛)
-    var bg = ctx.createLinearGradient(0, 0, W, H); bg.addColorStop(0, '#fff6f8'); bg.addColorStop(.5, '#fffaf3'); bg.addColorStop(1, '#fff3ee');
-    ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
-    [[0, 0, 'rgba(255,214,224,.9)'], [W, H, 'rgba(255,222,200,.9)'], [W, 0, 'rgba(232,222,255,.6)']].forEach(function (b) {
-      var rg = ctx.createRadialGradient(b[0], b[1], 0, b[0], b[1], 620); rg.addColorStop(0, b[2]); rg.addColorStop(1, 'rgba(255,255,255,0)');
-      ctx.fillStyle = rg; ctx.fillRect(0, 0, W, H);
-    });
-    drawFlower(ctx, 70, 70, 2.2, '#f7a1b6'); drawFlower(ctx, 200, 50, 1.4, '#ffc4a8'); drawFlower(ctx, 40, 210, 1.2, '#e7c9f2');
-    drawFlower(ctx, W - 70, H - 70, 2.2, '#f7a1b6'); drawFlower(ctx, W - 210, H - 45, 1.4, '#ffc4a8'); drawFlower(ctx, W - 40, H - 215, 1.2, '#f9c7d4');
-    // 흰 카드
-    ctx.save(); ctx.shadowColor = 'rgba(214,120,150,.22)'; ctx.shadowBlur = 50; ctx.shadowOffsetY = 18;
-    roundRect(ctx, 80, 110, 920, 1880, 56); ctx.fillStyle = 'rgba(255,255,255,.94)'; ctx.fill(); ctx.restore();
-    ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
-    ctx.fillStyle = '#c2507a'; ctx.font = '116px "Great Vibes"'; ctx.fillText('Wedding Day', cx, 275);
-    ctx.font = '700 34px Pretendard'; if ('letterSpacing' in ctx) ctx.letterSpacing = '6px'; ctx.fillText('초대 확인 카드', cx, 350); if ('letterSpacing' in ctx) ctx.letterSpacing = '0px';
-    // 이름 + 님
-    ctx.fillStyle = '#5e3343';
-    ctx.font = '700 92px "Noto Serif KR"'; var nw = ctx.measureText(g.name).width;
-    ctx.font = '500 50px Pretendard'; var sw = ctx.measureText(' 님').width;
-    var nx = cx - (nw + sw) / 2;
-    ctx.textAlign = 'left'; ctx.font = '700 92px "Noto Serif KR"'; ctx.fillText(g.name, nx, 478);
-    ctx.font = '500 50px Pretendard'; ctx.fillText(' 님', nx + nw, 478);
-    ctx.textAlign = 'center';
-    // "초대해 드린 분이 맞습니다"
-    ctx.font = '700 36px Pretendard'; var pw = ctx.measureText('초대해 드린 분이 맞습니다').width + 84;
-    var pg = ctx.createLinearGradient(cx - pw / 2, 0, cx + pw / 2, 0); pg.addColorStop(0, '#e0708f'); pg.addColorStop(1, '#f0957a');
-    roundRect(ctx, cx - pw / 2, 520, pw, 76, 38); ctx.fillStyle = pg; ctx.fill();
-    ctx.fillStyle = '#fff'; ctx.fillText('초대해 드린 분이 맞습니다', cx, 571);
-    // QR
-    roundRect(ctx, cx - 255, 640, 510, 510, 36); ctx.fillStyle = '#fff'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = '#f1e3e7'; ctx.stroke();
-    ctx.imageSmoothingEnabled = false; ctx.drawImage(qr, cx - 220, 675, 440, 440); ctx.imageSmoothingEnabled = true;
-    // 안내 문구
-    ctx.fillStyle = '#94707b'; ctx.font = '500 36px Pretendard';
-    ctx.fillText('귀한 걸음에 감사드립니다.', cx, 1212);
-    ctx.fillText('예식 당일 접수대에서 이 화면을 보여 주세요.', cx, 1264);
-    ctx.font = '500 29px Pretendard'; ctx.globalAlpha = .85; ctx.fillText('화면 밝기를 올려 주시면 더 빨리 확인됩니다.', cx, 1315); ctx.globalAlpha = 1;
-    // 모바일 청첩장 (사진 + 제목 + 날짜)
-    var bx = 150, bw = 780, by = 1370, ph = Math.round(bw / (photo.width / photo.height)), bh = ph + 150;
-    ctx.save(); roundRect(ctx, bx, by, bw, bh, 32); ctx.fillStyle = '#fff'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = '#f1e3e7'; ctx.stroke();
-    ctx.clip(); ctx.drawImage(photo, bx, by, bw, ph); ctx.restore();
-    ctx.textAlign = 'left'; ctx.fillStyle = '#4a2f38'; ctx.font = '800 40px Pretendard'; ctx.fillText(INVITE.title, bx + 30, by + ph + 62);
-    ctx.fillStyle = '#94707b'; ctx.font = '500 28px Pretendard'; ctx.fillText(INVITE.date, bx + 30, by + ph + 110);
-    return new Promise(function (res) { c.toBlob(res, 'image/png'); });
-  });
-}
-function shareCardImage(id) {
-  var g = guests[id]; if (!g || !g.cardToken) return;
-  // 카카오톡 안의 브라우저는 사진 공유·저장을 지원하지 않음 → 크롬으로 열기 안내
-  if (/KAKAOTALK/i.test(navigator.userAgent)) {
-    ask('크롬에서 보내 주세요', '카카오톡 안에서는 카드 사진을 만들어 보낼 수 없습니다.\n크롬으로 열면 버튼 하나로 바로 보낼 수 있습니다.', '크롬으로 열기')
-      .then(function (go) { if (go) location.href = 'kakaotalk://web/openExternal?url=' + encodeURIComponent(location.href); });
-    return;
-  }
-  toast('카드 사진을 만드는 중…');
-  drawCardImage(g).then(function (blob) {
-    var file = new File([blob], '초대확인카드_' + g.name + '.png', { type: 'image/png' });
-    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-      // 사진을 만드는 동안 버튼 누름의 유효 시간이 지날 수 있어, 확인 버튼을 한 번 더 눌러 공유 창을 엶
-      ask('카드 사진이 준비되었습니다', g.name + ' 님 카드 사진을 만들었습니다.\n보내기를 누르고 카카오톡 → 받을 사람을 고르세요.\n(안내 문구와 링크도 함께 보냅니다)', '카톡으로 보내기').then(function (ok) {
-        if (!ok) return;
-        navigator.share({ files: [file], text: cardMessage(g) }).catch(function (e) {
-          if (e && e.name === 'AbortError') return;
-          // 사진과 문구를 함께 못 보내는 경우 사진만 보냄
-          navigator.share({ files: [file] }).catch(function () {});
-        });
-      });
-      return;
-    }
-    // 사진 공유가 안 되는 기기: 파일로 저장
-    var a = document.createElement('a');
-    a.href = URL.createObjectURL(blob); a.download = file.name;
-    document.body.appendChild(a); a.click(); a.remove();
-    notice('카드 사진을 저장했습니다', '이 기기에서는 사진을 바로 보낼 수 없어 사진 파일로 저장했습니다.\n카카오톡 대화방에서 사진으로 보내 주세요.');
-  }).catch(function (e) { notice('카드 사진을 만들지 못했습니다', (e && e.message) || '잠시 후 다시 시도해 주세요.'); });
-}
-
 // 글자를 복사하고 성공 여부를 알려 줌 (클립보드 기능이 막힌 브라우저는 옛 방식으로 한 번 더 시도)
 function copyText(text) {
   function legacy() {

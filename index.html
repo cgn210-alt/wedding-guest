@@ -417,7 +417,7 @@ function openScan() {
       _scan = { canvas: document.createElement('canvas'), busy: false };
       var v = $('scanVideo');
       if (v.srcObject !== r[1]) v.srcObject = r[1];
-      v.play();
+      var pp = v.play(); if (pp && pp.catch) pp.catch(function () {});   // 바로 닫으면 재생이 중단되는 것은 정상
       $('scanMsg').textContent = 'QR을 네모 안에 맞춰 주세요';
       scanLoop();
     })
