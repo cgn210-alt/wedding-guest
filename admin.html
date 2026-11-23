@@ -456,10 +456,11 @@ function revokeCard(id) {
 }
 // 카드 링크와 함께 보내는 모바일 청첩장 주소
 var INVITATION_URL = 'https://chanhyeok-kyuri-1219-ny5w2hx0.netlify.app/';
-// 카카오톡은 문구 안 첫 번째 링크로 미리보기를 만들므로 청첩장 링크를 먼저 둠 (청첩장 썸네일이 크게 보이도록)
+// 카카오톡은 문구 안 첫 번째 링크 하나로만 미리보기를 만듦 → 초대 확인 카드 링크를 먼저 둠
+// (카드 미리보기에는 청첩장 사진이 쓰이고, 카드 화면 안에 모바일 청첩장이 함께 보임)
 function cardMessage(g) {
-  return g.name + ' 님, 모바일 청첩장과 초대 확인 카드를 보내 드립니다.\n' + INVITATION_URL +
-    '\n\n초대 확인 카드\n예식 당일 축의 접수대에서 이 화면을 보여 주시면 바로 확인해 드리겠습니다.\n' + cardUrl(g.cardToken);
+  return g.name + ' 님, 초대 확인 카드를 보내 드립니다.\n예식 당일 축의 접수대에서 이 화면을 보여 주시면 바로 확인해 드리겠습니다.\n' + cardUrl(g.cardToken) +
+    '\n\n모바일 청첩장\n' + INVITATION_URL;
 }
 // 휴대폰 공유 창을 열어 카카오톡 → 받을 사람을 고르면 문구와 링크가 함께 전송됨. 공유 기능이 없으면 복사로 대신
 function shareCard(id) {
@@ -480,8 +481,9 @@ function shareCard(id) {
     });
     return;
   }
-  // 카드 링크 → 모바일 청첩장 순서를 지키도록 링크까지 모두 문구(text)에 넣어 보냄
-  navigator.share({ title: '초대 확인 카드', text: cardMessage(g) })
+  // 링크 순서를 지키도록 링크까지 모두 문구(text)에 넣어 보냄
+  // title 을 넘기면 카카오톡이 문구 앞에 "제목 - "을 덧붙이므로 문구만 보냄
+  navigator.share({ text: cardMessage(g) })
     .catch(function (e) { if (e && e.name !== 'AbortError') { copyCard(id); } });
 }
 // 글자를 복사하고 성공 여부를 알려 줌 (클립보드 기능이 막힌 브라우저는 옛 방식으로 한 번 더 시도)

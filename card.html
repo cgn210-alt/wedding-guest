@@ -6,11 +6,12 @@
 <meta name="robots" content="noindex, nofollow">
 <title>초대 확인 카드</title>
 <!-- 하객에게 보내는 개인별 초대 확인 카드. 로그인 없이 열리며 wedding/cards/{토큰} 의 이름만 읽음 -->
-<meta name="description" content="예식 당일 접수대에서 이 화면을 보여 주세요">
-<meta property="og:title" content="초대 확인 카드">
-<meta property="og:description" content="예식 당일 접수대에서 이 화면을 보여 주세요">
+<!-- 카카오톡 미리보기: 제목은 초대 확인 카드, 사진은 모바일 청첩장 사진 (한 메시지에 썸네일은 하나만 붙으므로 둘을 합침) -->
+<meta name="description" content="예식 당일 축의 접수대에서 이 화면을 보여 주세요">
+<meta property="og:title" content="초대 확인 카드 · 주찬혁 ♥ 강규리 결혼합니다">
+<meta property="og:description" content="예식 당일 축의 접수대에서 이 화면을 보여 주세요">
 <meta property="og:type" content="website">
-<meta property="og:image" content="https://cgn210-alt.github.io/wedding-guest/wedding-card-og.png?v=1">
+<meta property="og:image" content="https://chanhyeok-kyuri-1219-ny5w2hx0.netlify.app/img/og2.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
@@ -31,6 +32,12 @@
   .ic .qr img, .ic .qr canvas { width: 192px !important; height: 192px !important; display: block; }
   .ic p { font-size: 14.5px; color: var(--sub); line-height: 1.65; margin-top: 18px; word-break: keep-all; }
   .ic .tip { font-size: 12.5px; color: var(--sub); opacity: .85; margin-top: 10px; }
+  /* 모바일 청첩장 썸네일 */
+  .inv { display: block; margin-top: 22px; border: 1px solid var(--line); border-radius: 18px; overflow: hidden; text-decoration: none; color: inherit; background: #fff; text-align: left; }
+  .inv img { width: 100%; aspect-ratio: 1.91; object-fit: cover; display: block; background: var(--gray-soft); }
+  .inv .t { padding: 12px 14px 4px; font-weight: 800; font-size: 15.5px; color: #4a2f38; }
+  .inv .d { padding: 0 14px; font-size: 13px; color: var(--sub); }
+  .inv .go { margin: 12px 14px 14px; display: block; text-align: center; background: var(--grad); color: #fff; font-weight: 700; font-size: 14.5px; border-radius: 12px; padding: 11px; }
 </style>
 </head>
 <body>
@@ -46,6 +53,13 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
 // 토큰으로 이름만 읽어 카드와 QR(이 카드 주소)을 그림. 배경 꽃 장식은 아래 common.js 가 그림 (로그인 코드는 쓰지 않음)
+// 모바일 청첩장 (청첩장 페이지의 미리보기 정보와 같게)
+var INVITATION = {
+  url: 'https://chanhyeok-kyuri-1219-ny5w2hx0.netlify.app/',
+  image: 'https://chanhyeok-kyuri-1219-ny5w2hx0.netlify.app/img/og2.jpg',
+  title: '주찬혁 ♥ 강규리 결혼합니다',
+  date: '2026년 12월 19일 토요일 오전 11시 · 광화문 아펠가모'
+};
 (function () {
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   var token = (new URLSearchParams(location.search).get('t') || '').trim();
@@ -63,7 +77,11 @@
         '<div class="ok">초대해 드린 분이 맞습니다</div>' +
         '<div class="qr" id="qr"></div>' +
         '<p>귀한 걸음에 감사드립니다.<br>예식 당일 접수대에서 이 화면을 보여 주세요.</p>' +
-        '<div class="tip">화면 밝기를 올려 주시면 더 빨리 확인됩니다.</div>';
+        '<div class="tip">화면 밝기를 올려 주시면 더 빨리 확인됩니다.</div>' +
+        '<a class="inv" href="' + INVITATION.url + '">' +
+          '<img src="' + INVITATION.image + '" alt="모바일 청첩장 사진">' +
+          '<div class="t">' + esc(INVITATION.title) + '</div><div class="d">' + esc(INVITATION.date) + '</div>' +
+          '<span class="go">모바일 청첩장 보기</span></a>';
       new QRCode(document.getElementById('qr'), { text: location.origin + location.pathname + '?t=' + token, width: 192, height: 192, correctLevel: QRCode.CorrectLevel.M });
     })
     .catch(fail);
