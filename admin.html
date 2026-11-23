@@ -500,8 +500,9 @@ function shareCard(id) {
         link: { mobileWebUrl: card, webUrl: card }
       },
       buttons: [
-        { title: '초대 확인 카드', link: { mobileWebUrl: card, webUrl: card } },
-        { title: '모바일 청첩장', link: { mobileWebUrl: INVITATION_URL, webUrl: INVITATION_URL } }
+        // 버튼 두 개가 나란히 놓여 칸이 좁으므로 휴대폰에서 한 줄로 보이게 짧게
+        { title: '초대 QR', link: { mobileWebUrl: card, webUrl: card } },
+        { title: '청첩장', link: { mobileWebUrl: INVITATION_URL, webUrl: INVITATION_URL } }
       ]
     });
   } catch (e) {
