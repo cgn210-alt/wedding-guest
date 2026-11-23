@@ -10,6 +10,13 @@
           }
         }
       },
+      "cards": {
+        "$token": {
+          ".read": true,
+          ".write": "auth != null && auth.token.email_verified == true && (auth.token.email.toLowerCase() == 'cgn210@cgnmail.net' || root.child('wedding/allowed').child(auth.token.email.toLowerCase().replace('.', ',')).exists())",
+          ".validate": "newData.child('name').isString() && newData.child('name').val().length > 0"
+        }
+      },
       "settings": {
         ".read": "auth != null && auth.token.email_verified == true && (auth.token.email.toLowerCase() == 'cgn210@cgnmail.net' || root.child('wedding/allowed').child(auth.token.email.toLowerCase().replace('.', ',')).exists())",
         ".write": "auth != null && auth.token.email_verified == true && auth.token.email.toLowerCase() == 'cgn210@cgnmail.net'"

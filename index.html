@@ -15,7 +15,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap">
-<link rel="stylesheet" href="style.css?v=8">
+<link rel="stylesheet" href="style.css?v=9">
 </head>
 <body>
 
@@ -61,7 +61,8 @@
         <input id="recvSearch" class="input search" type="search" placeholder="이름으로 찾기" autocomplete="off" oninput="renderRecv()">
       </div>
       <ul class="list" id="recvResults" style="margin-top:8px"></ul>
-      <button class="btn block dashed" style="margin-top:10px" onclick="openWalkIn()">+ 명단에 없는 방문자 접수</button>
+      <button class="btn block primary" style="margin-top:10px" onclick="openScan()">QR로 초대 확인</button>
+      <button class="btn block dashed" style="margin-top:8px" onclick="openWalkIn()">+ 명단에 없는 방문자 접수</button>
     </div>
     <div class="card">
       <h2>최근 접수 <span class="muted" id="recentCount"></span></h2>
@@ -230,13 +231,22 @@
   </div>
 </div>
 
+<!-- QR 초대 확인 -->
+<div id="scanBg" class="scan-bg hidden">
+  <div class="scan-box">
+    <div class="scan-hd"><b>초대 확인 카드의 QR을 비춰 주세요</b><button class="btn sm" onclick="closeScan()">닫기</button></div>
+    <div class="scan-view"><video id="scanVideo" playsinline muted></video><div class="scan-frame"></div></div>
+    <div class="scan-msg" id="scanMsg">카메라를 여는 중…</div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script src="firebase-config.js?v=2"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-<script src="common.js?v=8"></script>
+<script src="common.js?v=9"></script>
 <script>
 var _loaded = { groups: false, guests: false };
 var _tab = 'recv';
@@ -356,6 +366,80 @@ function renderRecv() {
   $('recentCount').textContent = recent.length + '명';
   $('recentList').innerHTML = recent.length ? recent.slice(0, 30).map(guestLi).join('') : '<div class="empty">아직 접수된 방문자가 없습니다.</div>';
 }
+
+/* ---------- QR 초대 확인 ---------- */
+// 카메라로 초대 확인 카드의 QR(카드 주소)을 읽어 그분의 접수 창을 엶. QR 해석은 jsQR 를 처음 쓸 때 불러옴
+var _scan = null;   // { stream, raf, canvas, busy }
+function loadJsQR() {
+  if (window.jsQR) return Promise.resolve();
+  return new Promise(function (res, rej) {
+    var s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js';
+    s.onload = res; s.onerror = rej;
+    document.head.appendChild(s);
+  });
+}
+function openScan() {
+  $('scanMsg').textContent = '카메라를 여는 중…';
+  $('scanBg').classList.remove('hidden');
+  openLayer('scan', function () { $('scanBg').classList.add('hidden'); stopScan(); });
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { scanFail(); return; }
+  Promise.all([loadJsQR(), navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false })])
+    .then(function (r) {
+      if ($('scanBg').classList.contains('hidden')) { r[1].getTracks().forEach(function (t) { t.stop(); }); return; }
+      _scan = { stream: r[1], canvas: document.createElement('canvas'), busy: false };
+      var v = $('scanVideo');
+      v.srcObject = r[1];
+      v.play();
+      $('scanMsg').textContent = 'QR을 네모 안에 맞춰 주세요';
+      scanLoop();
+    })
+    .catch(scanFail);
+}
+function scanFail() {
+  $('scanMsg').textContent = '카메라를 열 수 없습니다. 카메라 사용을 허용했는지 확인하시거나, 이름으로 찾아 주세요. (카카오톡 안에서는 열리지 않을 수 있습니다)';
+}
+function scanLoop() {
+  if (!_scan) return;
+  var v = $('scanVideo');
+  if (v.readyState >= 2 && !_scan.busy) {
+    var w = v.videoWidth, h = v.videoHeight, c = _scan.canvas;
+    // 가운데 정사각형만 읽어 속도를 높임
+    var side = Math.min(w, h), sx = (w - side) / 2, sy = (h - side) / 2, size = Math.min(side, 640);
+    c.width = size; c.height = size;
+    var ctx = c.getContext('2d', { willReadFrequently: true });
+    ctx.drawImage(v, sx, sy, side, side, 0, 0, size, size);
+    var code = window.jsQR(ctx.getImageData(0, 0, size, size).data, size, size, { inversionAttempts: 'dontInvert' });
+    if (code && code.data) onScanned(code.data);
+  }
+  if (_scan) _scan.raf = requestAnimationFrame(scanLoop);
+}
+function onScanned(text) {
+  var tok = tokenFromQr(text);
+  var g = tok && guestArr().filter(function (x) { return x.cardToken === tok; })[0];
+  if (!g) {
+    _scan.busy = true;
+    $('scanMsg').textContent = tok ? '명단에서 찾을 수 없는 카드입니다. 해제된 링크일 수 있으니 이름으로 확인해 주세요.' : '초대 확인 카드의 QR이 아닙니다.';
+    setTimeout(function () { if (_scan) { _scan.busy = false; $('scanMsg').textContent = 'QR을 네모 안에 맞춰 주세요'; } }, 2000);
+    return;
+  }
+  if (navigator.vibrate) navigator.vibrate(80);
+  closeScan();
+  setTab('recv');
+  // 스캔 창이 닫힌 뒤(뒤로 가기 기록 정리 후) 접수 창을 엶
+  setTimeout(function () {
+    openGuest(g.id);
+    toast(g.visited ? g.name + ' 님은 이미 접수되었습니다' : '초대 확인: ' + g.name + ' 님');
+  }, 120);
+}
+function stopScan() {
+  if (!_scan) return;
+  cancelAnimationFrame(_scan.raf);
+  _scan.stream.getTracks().forEach(function (t) { t.stop(); });
+  $('scanVideo').srcObject = null;
+  _scan = null;
+}
+function closeScan() { if (!closeLayer('scan')) { $('scanBg').classList.add('hidden'); stopScan(); } }
 
 /* ---------- 명단 ---------- */
 function renderGroupSelects() {
@@ -572,6 +656,8 @@ function saveModal() {
     var p;
     if (edit.id) {
       p = _db.ref(ROOT + '/data/guests/' + edit.id).update(data);
+      // 초대 확인 카드에 보이는 이름도 함께 바꿈
+      if (prev && prev.cardToken && prev.name !== name) _db.ref(ROOT + '/cards/' + prev.cardToken + '/name').set(name);
     } else {
       data.createdAt = firebase.database.ServerValue.TIMESTAMP; data.by = _me.email;
       p = _db.ref(ROOT + '/data/guests').push(data);
@@ -614,7 +700,9 @@ function deleteGuest() {
   if (!_edit || !_edit.id) return;
   var id = _edit.id, g = guests[id];
   ask('명단에서 삭제', g.name + ' 님을 명단에서 완전히 삭제할까요?' + (g.visited || bankGift(g) ? '\n축의금·식권·계좌 입금 기록도 함께 삭제됩니다.' : ''), '삭제', true).then(function (ok) {
-    if (ok) _db.ref(ROOT + '/data/guests/' + id).remove().then(function () { closeModal(); toast('삭제했습니다'); });
+    if (!ok) return;
+    if (g.cardToken) _db.ref(ROOT + '/cards/' + g.cardToken).remove();   // 초대 확인 링크도 함께 해제
+    _db.ref(ROOT + '/data/guests/' + id).remove().then(function () { closeModal(); toast('삭제했습니다'); });
   });
 }
 

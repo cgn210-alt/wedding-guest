@@ -206,6 +206,15 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13.5px; }
 .pick-sheet li.on { background: var(--accent-soft); color: var(--accent-dark); font-weight: 800; }
 .pick-sheet li.on svg { visibility: visible; }
 
+/* QR 초대 확인 */
+.scan-bg { position: fixed; inset: 0; z-index: 60; background: rgba(30,25,22,.72); display: flex; align-items: center; justify-content: center; padding: 16px; }
+.scan-box { width: 100%; max-width: 420px; background: #fff; border-radius: 22px; padding: 14px; }
+.scan-hd { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; font-size: 14.5px; }
+.scan-view { position: relative; width: 100%; aspect-ratio: 1; border-radius: 16px; overflow: hidden; background: #111; }
+.scan-view video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.scan-frame { position: absolute; inset: 14%; border: 3px solid rgba(255,255,255,.9); border-radius: 18px; box-shadow: 0 0 0 2000px rgba(0,0,0,.25); }
+.scan-msg { margin-top: 12px; font-size: 14px; color: var(--sub); text-align: center; line-height: 1.5; min-height: 42px; }
+
 /* 설정 탭 */
 .me { display: flex; align-items: center; gap: 12px; }
 .me .av { width: 42px; height: 42px; border-radius: 50%; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 17px; flex-shrink: 0; }

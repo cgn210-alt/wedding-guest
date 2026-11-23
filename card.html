@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>초대 확인 카드</title>
+<!-- 하객에게 보내는 개인별 초대 확인 카드. 로그인 없이 열리며 wedding/cards/{토큰} 의 이름만 읽음 -->
+<meta name="description" content="예식 당일 접수대에서 이 화면을 보여 주세요">
+<meta property="og:title" content="초대 확인 카드">
+<meta property="og:description" content="예식 당일 접수대에서 이 화면을 보여 주세요">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://cgn210-alt.github.io/wedding-guest/wedding-card-og.png?v=1">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Noto+Serif+KR:wght@500;700&display=swap">
+<link rel="stylesheet" href="style.css?v=9">
+<style>
+  body { padding: 0; }
+  .ic-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 28px 18px; }
+  .ic { width: 100%; max-width: 380px; background: rgba(255,255,255,.88); border: 2px solid #fff; border-radius: 30px;
+    box-shadow: 0 18px 50px rgba(214,120,150,.18); padding: 30px 24px 26px; text-align: center; }
+  .ic .script { font-size: 44px; line-height: 1; }
+  .ic .lbl { margin-top: 14px; font-size: 14px; font-weight: 700; color: var(--accent); letter-spacing: 2px; }
+  .ic h1 { font-family: 'Noto Serif KR', serif; font-size: 32px; font-weight: 700; color: #5e3343; margin-top: 8px; word-break: keep-all; }
+  .ic h1 small { font-size: 20px; font-weight: 500; margin-left: 4px; }
+  .ic .ok { display: inline-block; margin-top: 12px; font-size: 14.5px; font-weight: 700; color: #fff; background: var(--grad); border-radius: 999px; padding: 7px 18px; }
+  .ic .qr { margin: 22px auto 0; width: 216px; height: 216px; padding: 12px; background: #fff; border-radius: 18px; border: 1px solid var(--line); }
+  .ic .qr img, .ic .qr canvas { width: 192px !important; height: 192px !important; display: block; }
+  .ic p { font-size: 14.5px; color: var(--sub); line-height: 1.65; margin-top: 18px; word-break: keep-all; }
+  .ic .tip { font-size: 12.5px; color: var(--sub); opacity: .85; margin-top: 10px; }
+</style>
+</head>
+<body>
+<div class="ic-wrap">
+  <div class="ic" id="card">
+    <div class="script">Wedding Day</div>
+    <div class="lbl">초대 확인 카드</div>
+    <div id="body"><p>불러오는 중…</p></div>
+  </div>
+</div>
+
+<script src="firebase-config.js?v=2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+// 토큰으로 이름만 읽어 카드와 QR(이 카드 주소)을 그림. 배경 꽃 장식은 아래 common.js 가 그림 (로그인 코드는 쓰지 않음)
+(function () {
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  var token = (new URLSearchParams(location.search).get('t') || '').trim();
+  var body = document.getElementById('body');
+  function fail() {
+    body.innerHTML = '<p>카드를 확인할 수 없습니다.<br>받으신 링크를 다시 열어 주시거나,<br>접수대에서 성함을 말씀해 주세요.</p>';
+  }
+  if (!/^[a-z0-9]{12,40}$/.test(token) || typeof FIREBASE_CONFIG === 'undefined' || !FIREBASE_CONFIG.databaseURL) { fail(); return; }
+  fetch(FIREBASE_CONFIG.databaseURL + '/wedding/cards/' + token + '.json')
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (c) {
+      if (!c || !c.name) { fail(); return; }
+      body.innerHTML =
+        '<h1>' + esc(c.name) + '<small>님</small></h1>' +
+        '<div class="ok">초대해 드린 분이 맞습니다</div>' +
+        '<div class="qr" id="qr"></div>' +
+        '<p>귀한 걸음에 감사드립니다.<br>예식 당일 접수대에서 이 화면을 보여 주세요.</p>' +
+        '<div class="tip">화면 밝기를 올려 주시면 더 빨리 확인됩니다.</div>';
+      new QRCode(document.getElementById('qr'), { text: location.origin + location.pathname + '?t=' + token, width: 192, height: 192, correctLevel: QRCode.CorrectLevel.M });
+    })
+    .catch(fail);
+})();
+</script>
+<script src="common.js?v=9"></script>
+</body>
+</html>

@@ -112,6 +112,11 @@
   <div class="pill" id="tag">함께 축하해 주셔서 감사합니다</div>
 </div>
 <script>
+  // 하객에게 보내는 초대 확인 카드 링크용 (분홍 배경 그대로)
+  if (location.search.indexOf('card') >= 0) {
+    document.getElementById('title').textContent = '초대 확인 카드';
+    document.getElementById('desc').textContent = '예식 당일 접수대에서 이 화면을 보여 주세요';
+  }
   if (location.search.indexOf('admin') >= 0) {
     document.body.classList.add('admin');
     // 꽃·꽃잎·하트 색을 보라·하늘 계열로 바꿈

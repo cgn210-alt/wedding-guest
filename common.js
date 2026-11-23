@@ -55,6 +55,21 @@ function acctFull(id) { var a = acctById(id); return a ? a.bank + ' ' + a.holder
 function cashGift(g) { return g.visited ? (Number(g.gift) || 0) : 0; }          // 식장에서 받은 축의금
 function bankGift(g) { return g.bankAcct ? (Number(g.bankGift) || 0) : 0; }      // 계좌로 받은 축의금
 function totalGift(g) { return cashGift(g) + bankGift(g); }
+// 초대 확인 카드: guest.cardToken 과 공개 경로 wedding/cards/{토큰} = { name } (링크를 가진 사람만 그 한 분 이름을 볼 수 있음)
+function newCardToken() {
+  var a = new Uint8Array(12), s = '';
+  crypto.getRandomValues(a);
+  for (var i = 0; i < a.length; i++) s += (a[i] % 36).toString(36);
+  return s + Date.now().toString(36).slice(-4);
+}
+function cardUrl(token) { return location.origin + location.pathname.replace(/[^\/]*$/, '') + 'card.html?t=' + token; }
+// QR 내용(카드 주소 또는 토큰)에서 토큰만 꺼냄
+function tokenFromQr(text) {
+  text = String(text || '').trim();
+  var m = text.match(/[?&]t=([a-z0-9]{12,40})/);
+  if (m) return m[1];
+  return /^[a-z0-9]{12,40}$/.test(text) ? text : '';
+}
 function byName(a, b) { return String(a.name).localeCompare(String(b.name), 'ko'); }
 
 // 설정값 (DB 값이 없으면 기본값)
