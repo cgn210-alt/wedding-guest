@@ -162,8 +162,9 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13.5px; }
 .modal::before { content: ''; display: block; width: 40px; height: 4px; border-radius: 4px; background: var(--line); margin: 0 auto 14px; }
 @media (min-width: 640px) { .modal { border-radius: 20px; padding-top: 22px; } .modal::before { display: none; } }
 .modal h3 { font-size: 18px; font-weight: 800; margin-bottom: 16px; letter-spacing: -0.3px; }
-.quick { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-.quick button { border: 1px solid var(--line); background: #fff; border-radius: 999px; padding: 8px 13px; font-weight: 700; font-size: 14px; color: var(--text); transition: all .12s; }
+/* 금액 빠른 버튼: 같은 크기의 칸으로 한 줄에 4칸씩 줄 맞춤 */
+.quick { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin-top: 8px; }
+.quick button { height: 40px; padding: 0 4px; border: 1px solid var(--line); background: #fff; border-radius: 10px; font-weight: 700; font-size: 14px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: all .12s; }
 .quick button:hover { border-color: var(--accent); color: var(--accent); }
 .quick button.on { background: var(--accent); color: #fff; border-color: var(--accent); }
 .gift-input { font-size: 20px; font-weight: 800; letter-spacing: -0.3px; }
