@@ -41,6 +41,20 @@ function guestArr() {
 // 청첩장 종류 (guest.invType): paper 종이 / mobile 모바일 / both 둘 다, 값이 없으면 미지정
 var INV_TYPES = { paper: '종이', mobile: '모바일', both: '종이+모바일' };
 function invTypeLabel(v) { return INV_TYPES[v] || ''; }
+
+// 축의금 입금 계좌 (guest.bankAcct 에 계좌 id, guest.bankGift 에 입금액). 식장에 오지 않고 계좌로만 보낸 분도 기록
+// 공개 저장소이므로 계좌번호는 알아보기용 끝 4자리만 둠
+var ACCOUNTS = [
+  { id: 'shinhan', bank: '신한', holder: '주찬혁', tail: '1431' },
+  { id: 'hana', bank: '하나', holder: '주웅현', tail: '0007' },
+  { id: 'woori', bank: '우리', holder: '서정숙', tail: '5287' }
+];
+function acctById(id) { for (var i = 0; i < ACCOUNTS.length; i++) if (ACCOUNTS[i].id === id) return ACCOUNTS[i]; return null; }
+function acctLabel(id) { var a = acctById(id); return a ? a.bank + ' ' + a.holder : (id ? '기타 계좌' : ''); }
+function acctFull(id) { var a = acctById(id); return a ? a.bank + ' ' + a.holder + ' (…' + a.tail + ')' : acctLabel(id); }
+function cashGift(g) { return g.visited ? (Number(g.gift) || 0) : 0; }          // 식장에서 받은 축의금
+function bankGift(g) { return g.bankAcct ? (Number(g.bankGift) || 0) : 0; }      // 계좌로 받은 축의금
+function totalGift(g) { return cashGift(g) + bankGift(g); }
 function byName(a, b) { return String(a.name).localeCompare(String(b.name), 'ko'); }
 
 // 설정값 (DB 값이 없으면 기본값)

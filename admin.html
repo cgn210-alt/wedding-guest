@@ -7,7 +7,7 @@
 <title>결혼식 하객 접수 관리자</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap">
-<link rel="stylesheet" href="style.css?v=7">
+<link rel="stylesheet" href="style.css?v=8">
 <style>
   /* 관리자 화면은 연보라·하늘빛 (접수 화면 분홍과 구분, 관리자 썸네일과 같은 톤) */
   :root {
@@ -238,7 +238,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-<script src="common.js?v=7"></script>
+<script src="common.js?v=8"></script>
 <script>
 var allowed = {};
 var _settingsLoaded = false;
@@ -406,14 +406,15 @@ function exportCsv() {
     var ga = groupName(a.groupId), gb = groupName(b.groupId);
     return ga.localeCompare(gb, 'ko') || byName(a, b);
   });
-  var lines = [['이름', '그룹', '청첩장', '청첩장 종류', '방문', '구분', '방문시각', '축의금', '식권', '메모', '접수자'].join(',')];
+  var lines = [['이름', '그룹', '청첩장', '청첩장 종류', '방문', '구분', '방문시각', '축의금(현장)', '계좌입금액', '입금계좌', '축의금 합계', '식권', '메모', '접수자'].join(',')];
   function cell(v) { v = String(v == null ? '' : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }
   arr.forEach(function (g) {
     lines.push([
       g.name, groupName(g.groupId), g.invited ? 'O' : '', g.invited ? invTypeLabel(g.invType) : '', g.visited ? 'O' : '',
-      g.visited ? (g.invited ? '청첩장 방문' : '명단 외 방문') : '미방문',
+      g.visited ? (g.invited ? '청첩장 방문' : '명단 외 방문') : (bankGift(g) ? '계좌 입금(미방문)' : '미방문'),
       g.visited && g.visitedAt ? new Date(g.visitedAt).toLocaleString('ko-KR') : '',
-      g.visited ? (Number(g.gift) || 0) : '', g.visited ? (Number(g.tickets) || 0) : '', g.memo || '', g.visitBy || ''
+      g.visited ? (Number(g.gift) || 0) : '', bankGift(g) || '', bankGift(g) ? acctFull(g.bankAcct) : '', totalGift(g) || '',
+      g.visited ? (Number(g.tickets) || 0) : '', g.memo || '', g.visitBy || ''
     ].map(cell).join(','));
   });
   var blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });

@@ -96,6 +96,7 @@ select.input { appearance: none; -webkit-appearance: none; padding-right: 36px; 
 .b-walk { background: var(--warn-soft); color: var(--warn); }
 .b-grp { background: var(--gray-soft); color: var(--sub); }
 .b-inv { background: none; border: 1px solid var(--line); color: var(--sub); font-weight: 600; padding: 1px 7px; }
+.b-bank { background: #e0f2fe; color: #0369a1; }
 
 .bulk-type { margin: 8px 0 6px; padding: 10px 12px; background: #fbfaf9; border: 1px dashed var(--line); border-radius: 12px; font-size: 13px; color: var(--sub); }
 .bulk-type b { color: var(--text); }
@@ -106,6 +107,9 @@ select.input { appearance: none; -webkit-appearance: none; padding-right: 36px; 
 .seg button { flex: 1; border: 0; background: #fff; padding: 10px 6px; font-size: 14px; font-weight: 700; color: var(--sub); }
 .seg button + button { border-left: 1px solid var(--line); }
 .seg button.on { background: var(--accent-soft); color: var(--accent-dark); }
+/* 입금 계좌 선택 (은행·예금주 + 계좌번호 끝 4자리) */
+.acct-seg button { padding: 8px 4px; font-size: 13.5px; line-height: 1.25; }
+.acct-seg button small { display: block; font-size: 11.5px; font-weight: 600; opacity: .75; margin-top: 1px; }
 
 /* 목록 */
 .list { list-style: none; }
