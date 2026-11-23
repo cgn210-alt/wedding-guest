@@ -69,9 +69,15 @@
   .add-row .inp { flex: 1; min-width: 0; }
 
   /* 금액 칩 */
-  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
-  .chip { display: inline-flex; align-items: center; gap: 4px; background: var(--accent-soft); color: var(--accent-dark); font-weight: 700; font-size: 14px; border-radius: 999px; padding: 6px 6px 6px 12px; }
-  .chip button { border: 0; background: none; color: var(--accent-dark); width: 22px; height: 22px; border-radius: 50%; font-size: 15px; line-height: 1; opacity: .6; }
+  /* 축의금 빠른 버튼: 같은 크기의 칸으로 줄 맞춤 (휴대폰 3칸, 넓은 화면 4칸) */
+  .chips { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-bottom: 10px; }
+  @media (min-width: 520px) { .chips { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+  .chips .muted { grid-column: 1 / -1; }
+  .chip { position: relative; display: flex; align-items: center; justify-content: center; height: 42px; padding: 0 26px 0 8px;
+    background: var(--accent-soft); color: var(--accent-dark); font-weight: 700; font-size: 14px; border-radius: 12px; white-space: nowrap; }
+  .chip span { overflow: hidden; text-overflow: ellipsis; }
+  .chip button { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); border: 0; background: none; color: var(--accent-dark);
+    width: 22px; height: 22px; border-radius: 50%; font-size: 15px; line-height: 1; opacity: .55; padding: 0; }
   .chip button:hover { opacity: 1; background: rgba(0,0,0,.06); }
   .unit { position: relative; flex: 1; }
   .unit .inp { padding-right: 44px; }
@@ -300,7 +306,7 @@ function fillSettings() {
 function renderQuickChips() {
   _quick.sort(function (a, b) { return a - b; });
   $('quickChips').innerHTML = _quick.map(function (a, i) {
-    return '<span class="chip">' + manwon(a) + '<button type="button" title="빼기" onclick="removeQuick(' + i + ')">×</button></span>';
+    return '<span class="chip"><span>' + manwon(a) + '</span><button type="button" title="빼기" onclick="removeQuick(' + i + ')">×</button></span>';
   }).join('') || '<span class="muted">금액이 없습니다.</span>';
 }
 function addQuick() {
