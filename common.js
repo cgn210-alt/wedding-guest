@@ -148,6 +148,25 @@ function addFloatButtons() {
   // 아래쪽 탭 메뉴가 있는 화면(접수 화면)에서는 메뉴 위로 올려 둠
   if (document.querySelector('.tabs')) document.body.classList.add('has-tabs');
   el.querySelector('.fab-top').onclick = function () { window.scrollTo({ top: 0, behavior: 'smooth' }); };
+
+  // 아래로 스크롤하면 오른쪽에서 밀려 나오고, 위로 스크롤하면 오른쪽으로 들어감
+  // 스크롤할 내용이 없는 짧은 화면에서는 항상 보임
+  var lastY = window.scrollY;
+  function scrollable() { return document.documentElement.scrollHeight - window.innerHeight > 40; }
+  function setShown(on) { el.classList.toggle('fab-hide', !on); }
+  function update() {
+    var y = window.scrollY;
+    if (!scrollable()) setShown(true);
+    else if (y <= 10) setShown(false);
+    else if (y > lastY + 4) setShown(true);
+    else if (y < lastY - 4) setShown(false);
+    else return;
+    lastY = y;
+  }
+  setShown(!scrollable());
+  window.addEventListener('scroll', update, { passive: true });
+  window.addEventListener('resize', update);
+  if (window.ResizeObserver) new ResizeObserver(update).observe(document.body);
 }
 addFloatButtons();
 

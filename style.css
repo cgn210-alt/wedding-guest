@@ -239,3 +239,5 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13.5px; }
 .fab-b { width: 48px; height: 48px; border-radius: 50%; border: 0; padding: 0; display: flex; align-items: center; justify-content: center;
   background: #fff; color: #2b2724; box-shadow: 0 4px 14px rgba(0,0,0,.16); text-decoration: none; font-weight: 700; font-size: 15px; letter-spacing: .5px; cursor: pointer; transition: transform .12s; }
 .fab-b:active { transform: scale(.93); }
+.fab { transition: transform .3s ease, opacity .3s ease; }
+.fab.fab-hide { transform: translateX(calc(100% + 24px)); opacity: 0; pointer-events: none; }
