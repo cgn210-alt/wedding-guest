@@ -252,3 +252,8 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13.5px; }
 .rl-tag { font-size: 12px; font-weight: 700; border-radius: 999px; padding: 2px 8px; margin-left: 4px; }
 .rl-tag.y { background: var(--ok-soft); color: var(--ok); }
 .rl-tag.n { background: var(--gray-soft); color: var(--sub); }
+.rsvp-note { margin-top: 10px; padding: 10px 12px; background: var(--gray-soft); border-radius: 12px; }
+.rsvp-note div { display: flex; justify-content: space-between; align-items: baseline; padding: 3px 0; font-size: 13px; color: var(--sub); }
+.rsvp-note b { color: var(--text); font-size: 13.5px; }
+.rl-head { margin-top: 16px; font-weight: 800; font-size: 14px; }
+.rl-desc { margin-top: 2px; font-size: 12px; color: var(--sub); line-height: 1.5; word-break: keep-all; }

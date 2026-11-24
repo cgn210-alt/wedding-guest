@@ -15,7 +15,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap">
-<link rel="stylesheet" href="style.css?v=13">
+<link rel="stylesheet" href="style.css?v=14">
 </head>
 <body>
 
@@ -130,8 +130,9 @@
     <div class="card">
       <h2>참석 회신 <span class="muted">초대 카드 응답 + 직접 입력</span></h2>
       <div class="tbl-wrap"><table class="tbl" id="rsvpTable"></table></div>
-      <div class="muted" id="rsvpNote" style="margin-top:8px; line-height:1.5"></div>
-      <div style="margin-top:14px; font-weight:800; font-size:14px">회신한 분 <span class="muted" style="font-weight:600">수정은 인원·참석 여부 변경, 삭제는 회신만 지움 (명단은 그대로)</span></div>
+      <div class="rsvp-note" id="rsvpNote"></div>
+      <div class="rl-head">회신한 분</div>
+      <div class="rl-desc">수정: 참석 여부·인원 변경 · 삭제: 회신만 지움 (명단은 그대로)</div>
       <ul class="rsvp-list" id="rsvpList"></ul>
     </div>
     <div class="card">
@@ -861,8 +862,9 @@ function renderStats() {
     '<tr><td>참석 회신</td><td>' + rs.yes + '</td><td>' + rs.yesHead + '</td></tr>' +
     '<tr><td>불참 회신</td><td>' + rs.no + '</td><td>-</td></tr>' +
     '<tr><td>회신 없음<small>청첩장 받은 분</small></td><td>' + rs.none + '</td><td>-</td></tr>';
-  $('rsvpNote').textContent = '초대 카드 보낸 분 ' + rs.cards + '명 중 회신 없음 ' + rs.cardsNone + '명 · 카드에서 직접 회신 ' + rs.self + '명' +
-    (rs.yesVisited ? ' · 참석 회신한 분 중 접수 완료 ' + rs.yesVisited + '명' : '');
+  $('rsvpNote').innerHTML = [['초대 카드 보낸 분', rs.cards], ['카드 회신 없음', rs.cardsNone], ['카드에서 직접 회신', rs.self]]
+    .concat(rs.yesVisited ? [['참석 회신한 분 중 접수 완료', rs.yesVisited]] : [])
+    .map(function (x) { return '<div><span>' + x[0] + '</span><b>' + x[1] + '명</b></div>'; }).join('');
   // 회신한 분 목록: 여기서 바로 고치거나 지울 수 있음
   var rl = guestArr().filter(function (g) { return rsvpOf(g); }).sort(function (a, b) {
     return (rsvpOf(a).answer === 'yes' ? 0 : 1) - (rsvpOf(b).answer === 'yes' ? 0 : 1) || byName(a, b);
@@ -877,7 +879,7 @@ function renderStats() {
 
   // 계좌별 누적액
   function num(n) { return (Number(n) || 0).toLocaleString('ko-KR'); }
-  var ah = '<tr><th>받은 곳</th><th>건수</th><th>금액<small>원</small></th><th>비율</th></tr>';
+  var ah = '<tr><th>받은 곳</th><th>건수</th><th>금액(원)</th><th>비율</th></tr>';
   var acctIds = ACCOUNTS.map(function (a) { return a.id; });
   Object.keys(t.acct).forEach(function (id) { if (acctIds.indexOf(id) < 0) acctIds.push(id); });
   acctIds.forEach(function (id) {
