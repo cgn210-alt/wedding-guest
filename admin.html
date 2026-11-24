@@ -364,38 +364,61 @@ function addGroup() {
 var GRIP = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.8"/><circle cx="15" cy="6" r="1.8"/><circle cx="9" cy="12" r="1.8"/><circle cx="15" cy="12" r="1.8"/><circle cx="9" cy="18" r="1.8"/><circle cx="15" cy="18" r="1.8"/></svg>';
 
 // 끌어서 옮기기: 손잡이를 누른 채 위아래로 움직이면 그 줄이 손가락을 따라오고,
-// 옆 줄의 절반을 넘으면 자리를 바꿈. 놓으면 바뀐 순서를 저장
+// 옆 줄의 절반을 넘으면 옆 줄이 부드럽게 비켜 줌. 놓으면 바뀐 순서를 저장
+// (끄는 줄은 목록에서 빼지 않고 옆 줄만 옮김 → 휴대폰이 손가락 추적을 놓치지 않음)
 var _drag = null;
 function gripDown(e) {
   if (_drag || _editGroup || (e.pointerType === 'mouse' && e.button !== 0)) return;
   e.preventDefault();
-  var grip = e.currentTarget, li = grip.closest('li');
+  var li = e.currentTarget.closest('li');
   var before = Array.prototype.map.call($('groupList').children, function (x) { return x.getAttribute('data-id'); }).join(',');
-  _drag = { li: li, grip: grip, y0: e.pageY, before: before, pending: false };
+  _drag = { li: li, pid: e.pointerId, cy: e.clientY, y0: e.clientY + window.scrollY, before: before, pending: false, raf: 0 };
   li.classList.add('dragging');
   document.body.classList.add('drag-on');
-  try { grip.setPointerCapture(e.pointerId); } catch (err) {}
-  grip.onpointermove = gripMove;
-  grip.onpointerup = grip.onpointercancel = gripUp;
+  window.addEventListener('pointermove', gripMove, { passive: false });
+  window.addEventListener('pointerup', gripUp);
+  window.addEventListener('pointercancel', gripUp);
+  _drag.raf = requestAnimationFrame(dragTick);
 }
 function gripMove(e) {
-  if (!_drag) return;
-  // 화면 위·아래 끝 가까이 가면 저절로 스크롤
-  if (e.clientY < 70) window.scrollBy(0, -12);
-  else if (e.clientY > window.innerHeight - 70) window.scrollBy(0, 12);
-  var li = _drag.li, list = li.parentNode, dy = e.pageY - _drag.y0, sib;
+  if (!_drag || e.pointerId !== _drag.pid) return;
+  e.preventDefault();
+  _drag.cy = e.clientY;
+}
+// 화면이 그려질 때마다 한 번씩: 끝 가까이면 스크롤, 줄 위치 맞추기
+function dragTick() {
+  var d = _drag; if (!d) return;
+  var li = d.li, list = li.parentNode, cy = d.cy, h = window.innerHeight, edge = 80, sib;
+  if (cy < edge) window.scrollBy(0, -Math.ceil((edge - cy) / 5));
+  else if (cy > h - edge) window.scrollBy(0, Math.ceil((cy - (h - edge)) / 5));
+  var dy = cy + window.scrollY - d.y0;
   while ((sib = li.previousElementSibling) && dy < -sib.offsetHeight / 2) {
-    list.insertBefore(li, sib); _drag.y0 -= sib.offsetHeight; dy += sib.offsetHeight;
+    var sh = sib.offsetHeight; slideMove(sib, list, li.nextSibling); d.y0 -= sh; dy += sh;
   }
   while ((sib = li.nextElementSibling) && dy > sib.offsetHeight / 2) {
-    list.insertBefore(sib, li); _drag.y0 += sib.offsetHeight; dy -= sib.offsetHeight;
+    var nh = sib.offsetHeight; slideMove(sib, list, li); d.y0 += nh; dy -= nh;
   }
   li.style.transform = 'translateY(' + dy + 'px)';
+  d.raf = requestAnimationFrame(dragTick);
 }
-function gripUp() {
-  if (!_drag) return;
+// 옆 줄을 새 자리로 옮기되, 원래 자리에서 미끄러지듯 움직이게 함
+function slideMove(el, list, ref) {
+  var t0 = el.getBoundingClientRect().top;
+  list.insertBefore(el, ref);
+  var t1 = el.getBoundingClientRect().top;
+  el.style.transition = 'none';
+  el.style.transform = 'translateY(' + (t0 - t1) + 'px)';
+  void el.offsetHeight;
+  el.style.transition = 'transform .16s ease';
+  el.style.transform = '';
+}
+function gripUp(e) {
+  if (!_drag || (e && e.pointerId !== _drag.pid)) return;
   var d = _drag; _drag = null;
-  d.grip.onpointermove = d.grip.onpointerup = d.grip.onpointercancel = null;
+  cancelAnimationFrame(d.raf);
+  window.removeEventListener('pointermove', gripMove);
+  window.removeEventListener('pointerup', gripUp);
+  window.removeEventListener('pointercancel', gripUp);
   d.li.style.transform = '';
   d.li.classList.remove('dragging');
   document.body.classList.remove('drag-on');
@@ -491,15 +514,16 @@ function makeCard(id) {
 }
 function revokeCard(id) {
   var g = guests[id]; if (!g || !g.cardToken) return;
-  ask('링크 해제', g.name + ' 님의 초대 확인 링크를 해제할까요?\n이미 보낸 링크는 더 이상 열리지 않습니다.', '해제', true).then(function (ok) {
+  var r = rsvpOf(g);
+  ask('링크 해제', g.name + ' 님의 초대 확인 링크를 해제할까요?\n이미 보낸 링크는 더 이상 열리지 않습니다.' +
+    (r ? '\n받은 참석 회신(' + rsvpText(r) + ')도 지워져 참석 회신 집계에서 빠집니다.' : ''), '해제', true).then(function (ok) {
     if (!ok) return;
     var up = {};
     up['data/guests/' + id + '/cardToken'] = null;
     up['cards/' + g.cardToken] = null;
-    // 카드에서 받은 참석 회신은 지워지기 전에 이 분 기록(직접 입력)으로 옮겨 둠
-    var r = rsvpOf(g);
-    if (r && r.self) up['data/guests/' + id + '/rsvp'] = { answer: r.answer, count: r.count, at: r.at || firebase.database.ServerValue.TIMESTAMP, by: '초대 카드 회신(링크 해제 전)' };
+    // 카드 회신과 이 분 기록에 남은 회신을 모두 지움 → 집계에서 빠짐
     if (rsvps[g.cardToken]) up['rsvp/' + g.cardToken] = null;
+    if (g.rsvp) up['data/guests/' + id + '/rsvp'] = null;
     _db.ref(ROOT).update(up).then(function () { toast('해제했습니다'); });
   });
 }
