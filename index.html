@@ -736,6 +736,8 @@ function saveModal() {
     data.rsvp = ra ? { answer: ra, count: ra === 'yes' ? rsvpCount() : 0, at: firebase.database.ServerValue.TIMESTAMP, by: _me.email } : null;
   }
   var prev = _edit.id ? guests[_edit.id] : null;
+  // 회신을 '없음'으로 되돌렸으면 카드에서 받은 회신도 지움 (남아 있으면 집계에 계속 잡힘)
+  var clearCardRsvp = 'rsvp' in data && !data.rsvp && prev && prev.cardToken && rsvps[prev.cardToken] ? prev.cardToken : '';
   if (visited && !(prev && prev.visited)) { data.visitedAt = firebase.database.ServerValue.TIMESTAMP; data.visitBy = _me.email; }
   if (!visited) { data.visitedAt = null; data.visitBy = null; }
   if (acct && !(prev && prev.bankAcct === acct && Number(prev.bankGift) === bank)) { data.bankAt = firebase.database.ServerValue.TIMESTAMP; data.bankBy = _me.email; }
@@ -747,6 +749,7 @@ function saveModal() {
       p = _db.ref(ROOT + '/data/guests/' + edit.id).update(data);
       // 초대 확인 카드에 보이는 이름도 함께 바꿈
       if (prev && prev.cardToken && prev.name !== name) _db.ref(ROOT + '/cards/' + prev.cardToken + '/name').set(name);
+      if (clearCardRsvp) _db.ref(ROOT + '/rsvp/' + clearCardRsvp).remove();
     } else {
       data.createdAt = firebase.database.ServerValue.TIMESTAMP; data.by = _me.email;
       p = _db.ref(ROOT + '/data/guests').push(data);
@@ -771,7 +774,7 @@ function cancelVisit() {
   var id = _edit.id, g = guests[id];
   if (!g.invited && !bankGift(g)) {
     ask('방문 기록 삭제', g.name + ' 님은 명단 외 방문자라 방문을 취소하면 기록이 삭제됩니다.', '삭제', true).then(function (ok) {
-      if (ok) _db.ref(ROOT + '/data/guests/' + id).remove().then(function () { closeModal(); toast('삭제했습니다'); });
+      if (ok) removeGuest(id).then(function () { closeModal(); toast('삭제했습니다'); });
     });
     return;
   }
@@ -790,9 +793,15 @@ function deleteGuest() {
   var id = _edit.id, g = guests[id];
   ask('명단에서 삭제', g.name + ' 님을 명단에서 완전히 삭제할까요?' + (g.visited || bankGift(g) ? '\n축의금·식권·계좌 입금 기록도 함께 삭제됩니다.' : ''), '삭제', true).then(function (ok) {
     if (!ok) return;
-    if (g.cardToken) _db.ref(ROOT + '/cards/' + g.cardToken).remove();   // 초대 확인 링크도 함께 해제
-    _db.ref(ROOT + '/data/guests/' + id).remove().then(function () { closeModal(); toast('삭제했습니다'); });
+    removeGuest(id).then(function () { closeModal(); toast('삭제했습니다'); });
   });
+}
+// 명단에서 지울 때 초대 확인 링크와 카드에서 받은 참석 회신도 한 번에 지움 (참석 회신 집계에서 빠짐)
+function removeGuest(id) {
+  var g = guests[id], up = {};
+  up['data/guests/' + id] = null;
+  if (g && g.cardToken) { up['cards/' + g.cardToken] = null; up['rsvp/' + g.cardToken] = null; }
+  return _db.ref(ROOT).update(up).catch(function (e) { notice('삭제하지 못했습니다', e.message); throw e; });
 }
 
 /* ---------- 통계 ---------- */

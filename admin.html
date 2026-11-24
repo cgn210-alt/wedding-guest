@@ -102,10 +102,14 @@
   .rows li.wrap .acts { width: 100%; justify-content: flex-end; flex-wrap: wrap; }
   .b.kakao { background: #fee500; border-color: #fee500; color: #191919; padding: 7px 12px; font-size: 13px; }
   .b.kakao:hover { background: #f5dc00; }
-  .mv { display: flex; flex-direction: column; gap: 2px; margin-left: -8px; flex-shrink: 0; }
-  .mv button { width: 30px; height: 22px; border: 1px solid var(--line); background: #fff; border-radius: 7px; color: var(--sub); display: flex; align-items: center; justify-content: center; padding: 0; }
-  .mv button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
-  .mv button:disabled { opacity: .3; cursor: default; }
+  /* 그룹 순서: 왼쪽 손잡이를 누른 채 끌어서 옮김 */
+  .grip { width: 34px; height: 40px; margin-left: -10px; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+    color: var(--sub); border-radius: 9px; cursor: grab; touch-action: none; -webkit-user-select: none; user-select: none; }
+  .grip:hover { color: var(--accent); background: var(--accent-soft); }
+  #groupList li { background: #fff; }
+  #groupList li.dragging { position: relative; z-index: 5; box-shadow: 0 10px 26px rgba(120,50,80,.22); border-radius: 12px; cursor: grabbing; }
+  #groupList li.dragging .grip { color: var(--accent); background: var(--accent-soft); cursor: grabbing; }
+  body.drag-on { -webkit-user-select: none; user-select: none; }
   .cnt { font-size: 12px; font-weight: 700; color: var(--sub); background: var(--gray-soft); border-radius: 999px; padding: 3px 9px; flex-shrink: 0; }
   .av { width: 34px; height: 34px; border-radius: 50%; background: var(--accent-soft); color: var(--accent-dark); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; flex-shrink: 0; }
   .av.m { background: var(--accent); color: #fff; }
@@ -198,7 +202,7 @@
     <section class="sec">
       <div class="sec-hd">
         <h2>그룹</h2>
-        <p>왼쪽 화살표로 순서를 바꿉니다. 이 순서가 통계와 그룹 선택 창에 그대로 쓰입니다. 사람이 있는 그룹은 삭제할 수 없습니다.</p>
+        <p>왼쪽 손잡이(점 여섯 개)를 손가락으로 누른 채 원하는 자리로 끌어 놓으면 순서가 바뀝니다. 이 순서가 통계와 그룹 선택 창에 그대로 쓰입니다. 사람이 있는 그룹은 삭제할 수 없습니다.</p>
       </div>
       <ul class="rows" id="groupList" style="margin-top:12px"></ul>
       <div class="sec-ft">
@@ -332,6 +336,7 @@ function saveSettings() {
 
 /* ---------- 그룹 ---------- */
 function renderGroupList() {
+  if (_drag) { _drag.pending = true; return; }   // 끄는 중에는 다시 그리지 않음 (놓은 뒤에 그림)
   var counts = {};
   guestArr().forEach(function (g) { counts[g.groupId] = (counts[g.groupId] || 0) + 1; });
   var gs = sortedGroups();
@@ -340,10 +345,7 @@ function renderGroupList() {
       return '<li class="edit"><input id="grpEdit" class="inp" value="' + esc(g.name) + '" style="flex:1" onkeydown="if(event.key===\'Enter\')saveRename();if(event.key===\'Escape\')cancelRename()">' +
         '<button class="b" onclick="cancelRename()">취소</button><button class="b pri" onclick="saveRename()">저장</button></li>';
     }
-    var i = gs.indexOf(g);
-    return '<li><div class="mv">' +
-      '<button title="위로" onclick="moveGroup(\'' + g.id + '\',-1)"' + (i === 0 ? ' disabled' : '') + '>' + ARROW_UP + '</button>' +
-      '<button title="아래로" onclick="moveGroup(\'' + g.id + '\',1)"' + (i === gs.length - 1 ? ' disabled' : '') + '>' + ARROW_DOWN + '</button></div>' +
+    return '<li data-id="' + g.id + '"><div class="grip" title="눌러서 끌어 옮기기" onpointerdown="gripDown(event)">' + GRIP + '</div>' +
       '<div class="main"><div class="nm">' + esc(g.name) + '</div></div>' +
       '<span class="cnt">' + (counts[g.id] || 0) + '명</span>' +
       '<div class="acts"><button class="b ghost" onclick="startRename(\'' + g.id + '\')">이름 변경</button>' +
@@ -359,14 +361,50 @@ function addGroup() {
   var maxOrder = sortedGroups().reduce(function (m, g) { return Math.max(m, g.order); }, 0);
   _db.ref(ROOT + '/data/groups').push({ name: n, order: maxOrder + 1 }).then(function () { $('newGroup').value = ''; toast('그룹을 추가했습니다'); });
 }
-var ARROW_UP = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg>';
-var ARROW_DOWN = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>';
-// 옆 그룹과 자리를 바꾸고 전체 순서를 1부터 다시 매김 (중복 순서값 정리)
-function moveGroup(id, d) {
-  var ids = sortedGroups().map(function (g) { return g.id; });
-  var i = ids.indexOf(id), j = i + d;
-  if (i < 0 || j < 0 || j >= ids.length) return;
-  ids[i] = ids[j]; ids[j] = id;
+var GRIP = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.8"/><circle cx="15" cy="6" r="1.8"/><circle cx="9" cy="12" r="1.8"/><circle cx="15" cy="12" r="1.8"/><circle cx="9" cy="18" r="1.8"/><circle cx="15" cy="18" r="1.8"/></svg>';
+
+// 끌어서 옮기기: 손잡이를 누른 채 위아래로 움직이면 그 줄이 손가락을 따라오고,
+// 옆 줄의 절반을 넘으면 자리를 바꿈. 놓으면 바뀐 순서를 저장
+var _drag = null;
+function gripDown(e) {
+  if (_drag || _editGroup || (e.pointerType === 'mouse' && e.button !== 0)) return;
+  e.preventDefault();
+  var grip = e.currentTarget, li = grip.closest('li');
+  var before = Array.prototype.map.call($('groupList').children, function (x) { return x.getAttribute('data-id'); }).join(',');
+  _drag = { li: li, grip: grip, y0: e.pageY, before: before, pending: false };
+  li.classList.add('dragging');
+  document.body.classList.add('drag-on');
+  try { grip.setPointerCapture(e.pointerId); } catch (err) {}
+  grip.onpointermove = gripMove;
+  grip.onpointerup = grip.onpointercancel = gripUp;
+}
+function gripMove(e) {
+  if (!_drag) return;
+  // 화면 위·아래 끝 가까이 가면 저절로 스크롤
+  if (e.clientY < 70) window.scrollBy(0, -12);
+  else if (e.clientY > window.innerHeight - 70) window.scrollBy(0, 12);
+  var li = _drag.li, list = li.parentNode, dy = e.pageY - _drag.y0, sib;
+  while ((sib = li.previousElementSibling) && dy < -sib.offsetHeight / 2) {
+    list.insertBefore(li, sib); _drag.y0 -= sib.offsetHeight; dy += sib.offsetHeight;
+  }
+  while ((sib = li.nextElementSibling) && dy > sib.offsetHeight / 2) {
+    list.insertBefore(sib, li); _drag.y0 += sib.offsetHeight; dy -= sib.offsetHeight;
+  }
+  li.style.transform = 'translateY(' + dy + 'px)';
+}
+function gripUp() {
+  if (!_drag) return;
+  var d = _drag; _drag = null;
+  d.grip.onpointermove = d.grip.onpointerup = d.grip.onpointercancel = null;
+  d.li.style.transform = '';
+  d.li.classList.remove('dragging');
+  document.body.classList.remove('drag-on');
+  var ids = Array.prototype.map.call($('groupList').children, function (x) { return x.getAttribute('data-id'); });
+  if (ids.join(',') !== d.before) saveGroupOrder(ids.filter(function (id) { return id && groups[id]; }));
+  else if (d.pending) renderGroupList();
+}
+// 화면에 보이는 순서대로 1부터 다시 매겨 저장
+function saveGroupOrder(ids) {
   var up = {};
   ids.forEach(function (gid, k) { up[gid + '/order'] = k + 1; groups[gid].order = k + 1; });
   renderGroupList();
