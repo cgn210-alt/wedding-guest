@@ -7,9 +7,9 @@
 <title>초대 확인 카드</title>
 <!-- 하객에게 보내는 개인별 초대 확인 카드. 로그인 없이 열리며 wedding/cards/{토큰} 의 이름만 읽음 -->
 <!-- 카카오톡 미리보기: 제목은 초대 확인 카드, 사진은 모바일 청첩장 사진 (한 메시지에 썸네일은 하나만 붙으므로 둘을 합침) -->
-<meta name="description" content="예식 당일 축의 접수대에서 이 화면을 보여 주세요">
+<meta name="description" content="참석 여부를 알려 주시고, 예식 당일 축의 접수대에서 이 화면을 보여 주세요">
 <meta property="og:title" content="초대 확인 카드 · 주찬혁 ♥ 강규리 결혼합니다">
-<meta property="og:description" content="예식 당일 축의 접수대에서 이 화면을 보여 주세요">
+<meta property="og:description" content="참석 여부를 알려 주시고, 예식 당일 축의 접수대에서 이 화면을 보여 주세요">
 <meta property="og:type" content="website">
 <meta property="og:image" content="https://chanhyeok-kyuri-1219-ny5w2hx0.netlify.app/img/og2.jpg">
 <meta property="og:image:width" content="1200">
@@ -17,7 +17,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Noto+Serif+KR:wght@500;700&display=swap">
-<link rel="stylesheet" href="style.css?v=10">
+<link rel="stylesheet" href="style.css?v=11">
 <style>
   body { padding: 0; }
   .ic-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 28px 18px; }
@@ -38,6 +38,24 @@
   .inv img { width: 100%; aspect-ratio: 1.91; object-fit: cover; display: block; background: var(--gray-soft); }
   .inv .t { padding: 12px 14px 4px; font-weight: 800; font-size: 15.5px; color: #4a2f38; }
   .inv .d { padding: 0 14px; font-size: 13px; color: var(--sub); }
+  /* 참석 회신 */
+  .rsvp { margin-top: 20px; padding: 16px 14px; background: #fff; border: 1px solid var(--line); border-radius: 18px; }
+  .rsvp .q { font-size: 16.5px; font-weight: 800; color: #5e3343; }
+  .rsvp .s { font-size: 13px; color: var(--sub); margin-top: 3px; }
+  .rsvp .ab { display: flex; gap: 8px; margin-top: 12px; }
+  .rsvp .ab button { flex: 1; border: 1.5px solid var(--line); background: #fff; border-radius: 13px; padding: 12px 4px; font-size: 15px; font-weight: 800; color: var(--sub); }
+  .rsvp .ab button.on { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-dark); }
+  .rsvp .cnt { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 12px; font-size: 14.5px; font-weight: 700; color: #5e3343; }
+  .rsvp .cnt .cl { display: flex; flex-direction: column; align-items: flex-start; line-height: 1.3; white-space: nowrap; }
+  .rsvp .cnt small { font-weight: 500; font-size: 12px; color: var(--sub); }
+  .rsvp .st { display: inline-flex; align-items: center; border: 1px solid var(--line); border-radius: 11px; overflow: hidden; }
+  .rsvp .st button { width: 42px; height: 40px; border: 0; background: #fff; font-size: 19px; font-weight: 700; color: var(--text); }
+  .rsvp .st b { min-width: 48px; text-align: center; font-size: 17px; }
+  .rsvp .send { display: block; width: 100%; margin-top: 12px; border: 0; border-radius: 13px; padding: 13px; background: var(--grad); color: #fff; font-size: 15.5px; font-weight: 800; }
+  .rsvp .send:disabled { opacity: .5; }
+  .rsvp .done { font-size: 15.5px; font-weight: 800; color: #5e3343; line-height: 1.55; }
+  .rsvp .chg { margin-top: 8px; border: 0; background: none; color: var(--sub); font-size: 13px; text-decoration: underline; padding: 4px; }
+  .rsvp .err { margin-top: 8px; font-size: 13px; color: #b91c1c; }
   .inv .go { margin: 12px 14px 14px; display: block; text-align: center; background: var(--grad); color: #fff; font-weight: 700; font-size: 14.5px; border-radius: 12px; padding: 11px; }
 </style>
 </head>
@@ -69,6 +87,39 @@ var INVITATION = {
     body.innerHTML = '<p>카드를 확인할 수 없습니다.<br>받으신 링크를 다시 열어 주시거나,<br>접수대에서 성함을 말씀해 주세요.</p>';
   }
   if (!/^[a-z0-9]{12,40}$/.test(token) || typeof FIREBASE_CONFIG === 'undefined' || !FIREBASE_CONFIG.databaseURL) { fail(); return; }
+  // 참석 회신 (wedding/rsvp/{토큰}). 읽을 수 없으면(보안 규칙 rsvp 게시 전) 회신 칸만 숨기고 카드는 그대로 보여 줌
+  var RSVP_URL = FIREBASE_CONFIG.databaseURL + '/wedding/rsvp/' + token + '.json';
+  var rsvp = null, pick = '', cnt = 1, editing = false;
+  var rsvpLoad = fetch(RSVP_URL).then(function (r) { return r.ok ? r.json() : false; }).catch(function () { return false; });
+  function renderRsvp(err) {
+    var el = document.getElementById('rsvp');
+    if (!el) return;
+    if (rsvp && !editing) {
+      el.innerHTML = '<div class="done">' + (rsvp.answer === 'yes'
+          ? '참석으로 알려 주셨습니다 · ' + (Number(rsvp.count) || 1) + '명<br><span style="font-weight:600;font-size:14px;color:var(--sub)">감사합니다. 예식 당일 뵙겠습니다.</span>'
+          : '불참으로 알려 주셨습니다<br><span style="font-weight:600;font-size:14px;color:var(--sub)">마음 써 주셔서 감사합니다.</span>') + '</div>' +
+        '<button class="chg" id="rsvpChg">회신 바꾸기</button>';
+      document.getElementById('rsvpChg').onclick = function () { editing = true; pick = rsvp.answer; cnt = Number(rsvp.count) || 1; renderRsvp(); };
+      return;
+    }
+    el.innerHTML = '<div class="q">참석 여부를 알려 주세요</div><div class="s">예식장 식사 준비에 큰 도움이 됩니다</div>' +
+      '<div class="ab"><button data-a="yes" class="' + (pick === 'yes' ? 'on' : '') + '">참석합니다</button>' +
+      '<button data-a="no" class="' + (pick === 'no' ? 'on' : '') + '">참석이 어렵습니다</button></div>' +
+      (pick === 'yes' ? '<div class="cnt"><span class="cl">오시는 인원<small>본인 포함</small></span><span class="st"><button data-d="-1">−</button><b>' + cnt + '명</b><button data-d="1">+</button></span></div>' : '') +
+      (pick ? '<button class="send" id="rsvpSend">알리기</button>' : '') +
+      (err ? '<div class="err">' + esc(err) + '</div>' : '');
+    Array.prototype.forEach.call(el.querySelectorAll('[data-a]'), function (b) { b.onclick = function () { pick = b.getAttribute('data-a'); renderRsvp(); }; });
+    Array.prototype.forEach.call(el.querySelectorAll('[data-d]'), function (b) { b.onclick = function () { cnt = Math.min(10, Math.max(1, cnt + Number(b.getAttribute('data-d')))); renderRsvp(); }; });
+    var send = document.getElementById('rsvpSend');
+    if (send) send.onclick = function () {
+      send.disabled = true; send.textContent = '보내는 중…';
+      var data = { answer: pick, count: pick === 'yes' ? cnt : 0, at: { '.sv': 'timestamp' } };
+      fetch(RSVP_URL, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) })
+        .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+        .then(function (saved) { rsvp = saved; editing = false; renderRsvp(); })
+        .catch(function () { renderRsvp('보내지 못했습니다. 잠시 후 다시 눌러 주세요.'); });
+    };
+  }
   fetch(FIREBASE_CONFIG.databaseURL + '/wedding/cards/' + token + '.json')
     .then(function (r) { return r.ok ? r.json() : null; })
     .then(function (c) {
@@ -76,6 +127,7 @@ var INVITATION = {
       body.innerHTML =
         '<h1>' + esc(c.name) + '<small>님</small></h1>' +
         '<div class="ok">축복의 자리에 모십니다</div>' +
+        '<div class="rsvp hidden" id="rsvp"></div>' +
         '<div class="qr" id="qr"></div>' +
         '<p class="msg">귀한 걸음에 감사드립니다.<br><span class="hl">예식 당일 접수대에서<br>이 화면을 보여 주세요.</span></p>' +
         '<a class="inv" href="' + INVITATION.url + '">' +
@@ -83,10 +135,16 @@ var INVITATION = {
           '<div class="t">' + esc(INVITATION.title) + '</div><div class="d">' + esc(INVITATION.date) + '</div>' +
           '<span class="go">모바일 청첩장 보기</span></a>';
       new QRCode(document.getElementById('qr'), { text: location.origin + location.pathname + '?t=' + token, width: 192, height: 192, correctLevel: QRCode.CorrectLevel.M });
+      rsvpLoad.then(function (v) {
+        if (v === false) return;            // 회신 기능을 쓸 수 없음 → 칸 숨김 유지
+        rsvp = v && (v.answer === 'yes' || v.answer === 'no') ? v : null;
+        document.getElementById('rsvp').classList.remove('hidden');
+        renderRsvp();
+      });
     })
     .catch(fail);
 })();
 </script>
-<script src="common.js?v=9"></script>
+<script src="common.js?v=10"></script>
 </body>
 </html>

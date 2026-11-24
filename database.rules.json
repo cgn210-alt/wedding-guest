@@ -17,6 +17,26 @@
           ".validate": "newData.child('name').isString() && newData.child('name').val().length > 0"
         }
       },
+      "rsvp": {
+        ".read": "auth != null && auth.token.email_verified == true && (auth.token.email.toLowerCase() == 'cgn210@cgnmail.net' || root.child('wedding/allowed').child(auth.token.email.toLowerCase().replace('.', ',')).exists())",
+        "$token": {
+          ".read": true,
+          ".write": "root.child('wedding/cards').child($token).exists() && (newData.exists() || (auth != null && auth.token.email_verified == true && (auth.token.email.toLowerCase() == 'cgn210@cgnmail.net' || root.child('wedding/allowed').child(auth.token.email.toLowerCase().replace('.', ',')).exists())))",
+          ".validate": "newData.hasChildren(['answer', 'count', 'at']) && (newData.child('answer').val() == 'yes' || newData.child('answer').val() == 'no') && newData.child('count').isNumber() && newData.child('count').val() >= 0 && newData.child('count').val() <= 10 && newData.child('at').val() == now",
+          "answer": {
+            ".validate": "newData.isString()"
+          },
+          "count": {
+            ".validate": "newData.isNumber()"
+          },
+          "at": {
+            ".validate": "newData.isNumber()"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      },
       "settings": {
         ".read": "auth != null && auth.token.email_verified == true && (auth.token.email.toLowerCase() == 'cgn210@cgnmail.net' || root.child('wedding/allowed').child(auth.token.email.toLowerCase().replace('.', ',')).exists())",
         ".write": "auth != null && auth.token.email_verified == true && auth.token.email.toLowerCase() == 'cgn210@cgnmail.net'"

@@ -15,7 +15,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap">
-<link rel="stylesheet" href="style.css?v=10">
+<link rel="stylesheet" href="style.css?v=11">
 </head>
 <body>
 
@@ -104,6 +104,9 @@
           <option value="notype">청첩장 · 종류 미지정</option>
           <option value="bank">계좌 입금 전체</option>
           <option value="bank-only">방문 없이 계좌 입금</option>
+          <option value="rsvp-yes">참석 회신</option>
+          <option value="rsvp-no">불참 회신</option>
+          <option value="rsvp-none">회신 없음 (청첩장 받은 분)</option>
         </select>
       </div>
       <input id="fName" class="input" type="search" placeholder="이름 검색" oninput="renderList()" autocomplete="off">
@@ -124,6 +127,11 @@
   <!-- 통계 -->
   <div class="wrap hidden" id="tab-stats">
     <div class="kpis" id="kpis"></div>
+    <div class="card">
+      <h2>참석 회신 <span class="muted">초대 카드 응답 + 직접 입력</span></h2>
+      <div class="tbl-wrap"><table class="tbl" id="rsvpTable"></table></div>
+      <div class="muted" id="rsvpNote" style="margin-top:8px; line-height:1.5"></div>
+    </div>
     <div class="card">
       <h2>계좌별 누적액 <span class="muted">받은 곳 기준</span></h2>
       <div class="tbl-wrap"><table class="tbl" id="acctTable"></table></div>
@@ -189,6 +197,20 @@
         <button type="button" data-v="paper">종이</button><button type="button" data-v="mobile">모바일</button><button type="button" data-v="both">둘 다</button>
       </div>
     </div>
+    <div class="field">
+      <label>참석 회신 <small>카드로 받은 응답이 보이며, 전화 등으로 들은 내용을 직접 넣을 수도 있습니다</small></label>
+      <div class="seg" id="mRsvp">
+        <button type="button" data-v="yes">참석</button><button type="button" data-v="no">불참</button>
+      </div>
+      <div class="row" id="mRsvpCountRow" style="margin-top:8px; align-items:center; gap:10px">
+        <span class="muted">오실 인원 <small>본인 포함</small></span>
+        <div class="stepper">
+          <button type="button" onclick="stepRsvp(-1)">−</button>
+          <input id="mRsvpCount" class="input" inputmode="numeric" value="1">
+          <button type="button" onclick="stepRsvp(1)">+</button>
+        </div>
+      </div>
+    </div>
     <div id="mVisitFields" class="visit-box">
       <div class="field">
         <label>축의금 <small>원</small></label>
@@ -246,7 +268,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-<script src="common.js?v=9"></script>
+<script src="common.js?v=10"></script>
 <script>
 var _loaded = { groups: false, guests: false };
 var _tab = 'recv';
@@ -284,6 +306,11 @@ function startApp() {
   listen(ROOT + '/data/guests', function (s) {
     guests = s.val() || {};
     _loaded.guests = true;
+    renderAll();
+  });
+  // 초대 카드에서 하객이 누른 참석 회신 (보안 규칙 rsvp 를 게시하기 전에는 읽지 못해도 나머지는 그대로 동작)
+  listen(ROOT + '/rsvp', function (s) {
+    rsvps = s.val() || {};
     renderAll();
   });
 }
@@ -346,6 +373,8 @@ function guestLi(g) {
   if (bank) sub.push(acctLabel(g.bankAcct) + (g.visited ? ' ' + manwon(bank) : ''));
   var right = (g.visited || bank) ? '<div class="amt">' + manwon(totalGift(g)) + '<small>' + esc(sub.join(' · ')) + '</small></div>' : '';
   var inv = g.invited && invTypeLabel(g.invType) ? ' <span class="badge b-inv">' + invTypeLabel(g.invType) + '</span>' : '';
+  var rv = !g.visited && rsvpOf(g);
+  if (rv) inv += rv.answer === 'yes' ? ' <span class="badge b-rsvp">참석 회신 ' + rv.count + '명</span>' : ' <span class="badge b-rsvp-no">불참 회신</span>';
   return '<li onclick="openGuest(\'' + g.id + '\')"><div class="av ' + avCls + '">' + esc(String(g.name).charAt(0)) + '</div>' +
     '<div class="body"><div class="nm">' + esc(g.name) + ' ' + badge + inv + '</div>' +
     '<div class="meta">' + esc(groupName(g.groupId)) + (g.memo ? ' · ' + esc(g.memo) : '') +
@@ -493,6 +522,9 @@ function renderList() {
     if (fs === 'notype' && !((g.invited && !INV_TYPES[g.invType]) || (!g.invited && !g.visited && !bankGift(g)))) return false;
     if (fs === 'bank' && !bankGift(g)) return false;
     if (fs === 'bank-only' && !(bankGift(g) && !g.visited)) return false;
+    if (fs === 'rsvp-yes' && !(rsvpOf(g) && rsvpOf(g).answer === 'yes')) return false;
+    if (fs === 'rsvp-no' && !(rsvpOf(g) && rsvpOf(g).answer === 'no')) return false;
+    if (fs === 'rsvp-none' && !(g.invited && !rsvpOf(g))) return false;
     if (fs.indexOf('acct:') === 0 && !(bankGift(g) && g.bankAcct === fs.slice(5))) return false;
     if (q && String(g.name).replace(/\s/g, '').indexOf(q) < 0) return false;
     return true;
@@ -558,7 +590,11 @@ function openGuest(id) {
   $('mGift').value = g.visited && g.gift ? Number(g.gift).toLocaleString('ko-KR') : '';
   segSet('mAcct', g.bankAcct || '');
   $('mBank').value = bankGift(g) ? bankGift(g).toLocaleString('ko-KR') : '';
-  $('mTickets').value = g.visited ? (Number(g.tickets) || 0) : (fromRecv ? defaultTickets() : 0);
+  var rv = rsvpOf(g);
+  // 참석으로 회신한 분은 처음 식권 매수를 회신한 인원으로 채움
+  $('mTickets').value = g.visited ? (Number(g.tickets) || 0) : (fromRecv ? (rv && rv.answer === 'yes' ? rv.count : defaultTickets()) : 0);
+  setRsvpFields(rv);
+  _edit.rsvp0 = rsvpFieldKey();
   $('mMemo').value = g.memo || '';
   $('mSave').textContent = fromRecv && !g.visited ? '접수 완료' : '저장';
   $('mCancelVisit').classList.toggle('hidden', !g.visited);
@@ -567,6 +603,7 @@ function openGuest(id) {
   var info = [];
   if (g.visited && g.visitedAt) info.push('접수 ' + new Date(g.visitedAt).toLocaleString('ko-KR') + (g.visitBy ? ' · ' + g.visitBy : ''));
   if (bankGift(g) && g.bankAt) info.push('계좌 입금 기록 ' + new Date(g.bankAt).toLocaleString('ko-KR') + (g.bankBy ? ' · ' + g.bankBy : ''));
+  if (rv) info.push('참석 회신 ' + rsvpText(rv) + ' · ' + (rv.self ? '초대 카드에서 직접' : '직접 입력' + (rv.by ? ' ' + rv.by : '')) + (rv.at ? ' · ' + new Date(rv.at).toLocaleString('ko-KR') : ''));
   $('mInfo').innerHTML = info.map(esc).join('<br>');
   openModal();
 }
@@ -581,6 +618,8 @@ function openWalkIn() {
   segSet('mType', '');
   $('mVisited').checked = true;
   $('mGift').value = '';
+  setRsvpFields(null);
+  _edit.rsvp0 = rsvpFieldKey();
   segSet('mAcct', '');
   $('mBank').value = '';
   $('mTickets').value = defaultTickets();
@@ -615,6 +654,23 @@ function segSet(id, v) { $(id).querySelectorAll('button').forEach(function (b) {
     if (id === 'mType' && segGet(id)) $('mInvited').checked = true;
   });
 });
+
+// 참석 회신 (참석/불참, 다시 누르면 해제) + 오실 인원
+$('mRsvp').addEventListener('click', function (e) {
+  var b = e.target.closest('button'); if (!b) return;
+  var v = b.getAttribute('data-v');
+  segSet('mRsvp', segGet('mRsvp') === v ? '' : v);
+  syncRsvpFields();
+});
+function syncRsvpFields() { $('mRsvpCountRow').classList.toggle('hidden', segGet('mRsvp') !== 'yes'); }
+function rsvpCount() { return Math.min(10, Math.max(1, parseInt($('mRsvpCount').value, 10) || 1)); }
+function stepRsvp(d) { $('mRsvpCount').value = Math.min(10, Math.max(1, rsvpCount() + d)); }
+function setRsvpFields(r) {
+  segSet('mRsvp', r ? r.answer : '');
+  $('mRsvpCount').value = r && r.answer === 'yes' ? r.count : 1;
+  syncRsvpFields();
+}
+function rsvpFieldKey() { var a = segGet('mRsvp'); return a === 'yes' ? 'yes' + rsvpCount() : a; }
 
 // 입금 계좌 선택 (이미 선택된 계좌를 다시 누르면 해제)
 $('mAcct').addEventListener('click', function (e) {
@@ -674,6 +730,11 @@ function saveModal() {
   if (acct && !bank) { notice('입금액을 입력해 주세요', acctFull(acct) + ' 계좌로 받은 금액을 입력해 주세요.\n계좌 입금이 아니면 선택한 계좌를 다시 눌러 해제하세요.'); return; }
   data.bankAcct = acct || null;
   data.bankGift = bank;
+  // 참석 회신을 이 창에서 바꿨을 때만 '직접 입력'으로 저장 (카드 응답은 그대로 둠)
+  if (rsvpFieldKey() !== _edit.rsvp0) {
+    var ra = segGet('mRsvp');
+    data.rsvp = ra ? { answer: ra, count: ra === 'yes' ? rsvpCount() : 0, at: firebase.database.ServerValue.TIMESTAMP, by: _me.email } : null;
+  }
   var prev = _edit.id ? guests[_edit.id] : null;
   if (visited && !(prev && prev.visited)) { data.visitedAt = firebase.database.ServerValue.TIMESTAMP; data.visitBy = _me.email; }
   if (!visited) { data.visitedAt = null; data.visitBy = null; }
@@ -761,6 +822,23 @@ function renderStats() {
   ].map(function (k) {
     return '<div class="kpi ' + (k[3] || '') + '"><div class="k">' + k[0] + '</div><div class="v">' + k[1] + '</div>' + (k[2] ? '<div class="s">' + k[2] + '</div>' : '') + '</div>';
   }).join('');
+
+  // 참석 회신
+  var rs = { yes: 0, yesHead: 0, no: 0, none: 0, cards: 0, cardsNone: 0, yesVisited: 0, self: 0 };
+  guestArr().forEach(function (g) {
+    var r = rsvpOf(g);
+    if (g.cardToken) { rs.cards++; if (!r) rs.cardsNone++; }
+    if (r && r.self) rs.self++;
+    if (r && r.answer === 'yes') { rs.yes++; rs.yesHead += r.count; if (g.visited) rs.yesVisited++; }
+    else if (r) rs.no++;
+    else if (g.invited) rs.none++;
+  });
+  $('rsvpTable').innerHTML = '<tr><th>구분</th><th>명단</th><th>오실 인원<small>본인 포함</small></th></tr>' +
+    '<tr><td>참석 회신</td><td>' + rs.yes + '</td><td>' + rs.yesHead + '</td></tr>' +
+    '<tr><td>불참 회신</td><td>' + rs.no + '</td><td>-</td></tr>' +
+    '<tr><td>회신 없음<small>청첩장 받은 분</small></td><td>' + rs.none + '</td><td>-</td></tr>';
+  $('rsvpNote').textContent = '초대 카드 보낸 분 ' + rs.cards + '명 중 회신 없음 ' + rs.cardsNone + '명 · 카드에서 직접 회신 ' + rs.self + '명' +
+    (rs.yesVisited ? ' · 참석 회신한 분 중 접수 완료 ' + rs.yesVisited + '명' : '');
 
   // 계좌별 누적액
   function num(n) { return (Number(n) || 0).toLocaleString('ko-KR'); }

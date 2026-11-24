@@ -5,7 +5,7 @@ var DEFAULT_SETTINGS = { title: '', quickAmounts: [30000, 50000, 100000, 200000,
 
 var _db, _me, _isMaster = false;
 var _refs = [];
-var groups = {}, guests = {}, settings = {};
+var groups = {}, guests = {}, settings = {}, rsvps = {};
 
 function $(id) { return document.getElementById(id); }
 function show(id) {
@@ -70,6 +70,18 @@ function tokenFromQr(text) {
   if (m) return m[1];
   return /^[a-z0-9]{12,40}$/.test(text) ? text : '';
 }
+// 참석 회신: 하객이 카드에서 직접 누른 것(wedding/rsvp/{토큰}) 또는 접수 담당자가 대신 입력한 것(guest.rsvp) 중 나중 것
+// 반환: null 또는 { answer: 'yes'|'no', count: 오실 인원(본인 포함, 불참은 0), at, by, self: 카드에서 직접 회신했는지 }
+function rsvpOf(g) {
+  var a = g.cardToken ? rsvps[g.cardToken] : null, b = g.rsvp;
+  var ok = function (x) { return x && (x.answer === 'yes' || x.answer === 'no'); };
+  if (!ok(a)) a = null;
+  if (!ok(b)) b = null;
+  var r = a && b ? ((Number(a.at) || 0) >= (Number(b.at) || 0) ? a : b) : (a || b);
+  if (!r) return null;
+  return { answer: r.answer, count: r.answer === 'yes' ? Math.min(10, Math.max(1, Number(r.count) || 1)) : 0, at: r.at, by: r === a ? '' : (r.by || ''), self: r === a };
+}
+function rsvpText(r) { return !r ? '' : (r.answer === 'yes' ? '참석 ' + r.count + '명' : '불참'); }
 function byName(a, b) { return String(a.name).localeCompare(String(b.name), 'ko'); }
 
 // 설정값 (DB 값이 없으면 기본값)
@@ -257,7 +269,7 @@ function listen(path, cb) {
 }
 function detachAll() {
   _refs.forEach(function (r) { r.off(); });
-  _refs = []; groups = {}; guests = {}; settings = {};
+  _refs = []; groups = {}; guests = {}; settings = {}; rsvps = {};
 }
 
 // 그룹 순서를 정해진 순서로 한 번만 맞춤 (마스터 접속 시). 완료 표시는 data/meta 에 남겨 다시 실행되지 않음

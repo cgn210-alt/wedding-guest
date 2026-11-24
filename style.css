@@ -97,6 +97,8 @@ select.input { appearance: none; -webkit-appearance: none; padding-right: 36px; 
 .b-grp { background: var(--gray-soft); color: var(--sub); }
 .b-inv { background: none; border: 1px solid var(--line); color: var(--sub); font-weight: 600; padding: 1px 7px; }
 .b-bank { background: #e0f2fe; color: #0369a1; }
+.b-rsvp { background: #ede9fe; color: #6d28d9; }
+.b-rsvp-no { background: var(--gray-soft); color: var(--sub); text-decoration: none; }
 
 .bulk-type { margin: 8px 0 6px; padding: 10px 12px; background: #fbfaf9; border: 1px dashed var(--line); border-radius: 12px; font-size: 13px; color: var(--sub); }
 .bulk-type b { color: var(--text); }
