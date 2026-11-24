@@ -15,7 +15,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap">
-<link rel="stylesheet" href="style.css?v=12">
+<link rel="stylesheet" href="style.css?v=13">
 </head>
 <body>
 
@@ -131,6 +131,8 @@
       <h2>참석 회신 <span class="muted">초대 카드 응답 + 직접 입력</span></h2>
       <div class="tbl-wrap"><table class="tbl" id="rsvpTable"></table></div>
       <div class="muted" id="rsvpNote" style="margin-top:8px; line-height:1.5"></div>
+      <div style="margin-top:14px; font-weight:800; font-size:14px">회신한 분 <span class="muted" style="font-weight:600">수정은 인원·참석 여부 변경, 삭제는 회신만 지움 (명단은 그대로)</span></div>
+      <ul class="rsvp-list" id="rsvpList"></ul>
     </div>
     <div class="card">
       <h2>계좌별 누적액 <span class="muted">받은 곳 기준</span></h2>
@@ -268,7 +270,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-<script src="common.js?v=11"></script>
+<script src="common.js?v=12"></script>
 <script>
 var _loaded = { groups: false, guests: false };
 var _tab = 'recv';
@@ -796,6 +798,19 @@ function deleteGuest() {
     removeGuest(id).then(function () { closeModal(); toast('삭제했습니다'); });
   });
 }
+// 참석 회신만 지움 (카드 회신 + 직접 입력 모두). 명단·축의금 기록은 그대로
+function clearRsvp(id) {
+  var g = guests[id], r = g && rsvpOf(g);
+  if (!r) return;
+  ask('회신 삭제', g.name + ' 님의 참석 회신(' + rsvpText(r) + ')을 지울까요?\n명단과 축의금 기록은 그대로 둡니다.', '삭제', true).then(function (ok) {
+    if (!ok) return;
+    var up = {};
+    up['data/guests/' + id + '/rsvp'] = null;
+    if (g.cardToken && rsvps[g.cardToken]) up['rsvp/' + g.cardToken] = null;
+    _db.ref(ROOT).update(up).then(function () { toast('회신을 지웠습니다'); })
+      .catch(function (e) { notice('지우지 못했습니다', e.message); });
+  });
+}
 // 명단에서 지울 때 초대 확인 링크와 카드에서 받은 참석 회신도 한 번에 지움 (참석 회신 집계에서 빠짐)
 function removeGuest(id) {
   var g = guests[id], up = {};
@@ -848,6 +863,17 @@ function renderStats() {
     '<tr><td>회신 없음<small>청첩장 받은 분</small></td><td>' + rs.none + '</td><td>-</td></tr>';
   $('rsvpNote').textContent = '초대 카드 보낸 분 ' + rs.cards + '명 중 회신 없음 ' + rs.cardsNone + '명 · 카드에서 직접 회신 ' + rs.self + '명' +
     (rs.yesVisited ? ' · 참석 회신한 분 중 접수 완료 ' + rs.yesVisited + '명' : '');
+  // 회신한 분 목록: 여기서 바로 고치거나 지울 수 있음
+  var rl = guestArr().filter(function (g) { return rsvpOf(g); }).sort(function (a, b) {
+    return (rsvpOf(a).answer === 'yes' ? 0 : 1) - (rsvpOf(b).answer === 'yes' ? 0 : 1) || byName(a, b);
+  });
+  $('rsvpList').innerHTML = rl.length ? rl.map(function (g) {
+    var r = rsvpOf(g);
+    return '<li><div class="rl-main"><b>' + esc(g.name) + '</b> <span class="rl-tag ' + (r.answer === 'yes' ? 'y' : 'n') + '">' + rsvpText(r) + '</span>' +
+      '<div class="muted">' + esc(groupName(g.groupId)) + ' · ' + (r.self ? '초대 카드' : '직접 입력') + '</div></div>' +
+      '<button class="btn sm" onclick="openGuest(\'' + g.id + '\')">수정</button>' +
+      '<button class="btn sm danger" onclick="clearRsvp(\'' + g.id + '\')">삭제</button></li>';
+  }).join('') : '<li class="muted">회신한 분이 없습니다.</li>';
 
   // 계좌별 누적액
   function num(n) { return (Number(n) || 0).toLocaleString('ko-KR'); }

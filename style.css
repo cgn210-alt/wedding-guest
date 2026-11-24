@@ -243,3 +243,12 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13.5px; }
 .fab-top { background: #3f3a52; color: #fff; border: 2px solid #fff; box-shadow: 0 4px 14px rgba(30,25,45,.35); }
 .fab { transition: transform .3s ease, opacity .3s ease; }
 .fab.fab-hide { transform: translateX(calc(100% + 24px)); opacity: 0; pointer-events: none; }
+
+/* 통계 · 회신한 분 목록 */
+.rsvp-list { list-style: none; margin-top: 6px; }
+.rsvp-list li { display: flex; align-items: center; gap: 6px; padding: 9px 0; border-top: 1px solid var(--line); font-size: 14px; }
+.rsvp-list .rl-main { flex: 1; min-width: 0; }
+.rsvp-list .rl-main .muted { font-size: 12px; margin-top: 2px; }
+.rl-tag { font-size: 12px; font-weight: 700; border-radius: 999px; padding: 2px 8px; margin-left: 4px; }
+.rl-tag.y { background: var(--ok-soft); color: var(--ok); }
+.rl-tag.n { background: var(--gray-soft); color: var(--sub); }
