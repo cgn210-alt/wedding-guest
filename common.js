@@ -128,6 +128,29 @@ function addDecoBackground() {
 }
 addDecoBackground();
 
+/* ---------- 오른쪽 아래 둥근 버튼 (1:1 문자 · 맨 위로) ---------- */
+// 번호가 비어 있으면 1:1 버튼은 보이지 않음 (맨 위로 버튼은 항상 보임)
+// 공개 저장소이므로 여기 넣은 번호는 누구나 볼 수 있음
+var CONTACT = {
+  smsNumber: '010-8212-7455'   // 1:1 버튼을 누르면 문자를 보낼 번호
+};
+function addFloatButtons() {
+  if (document.querySelector('.fab')) return;
+  var h = '';
+  var num = String(CONTACT.smsNumber || '').replace(/[^\d+]/g, '');
+  if (num) h += '<a class="fab-b fab-11" href="sms:' + num + '" aria-label="1:1 문자 보내기">1:1</a>';
+  h += '<button type="button" class="fab-b fab-top" aria-label="맨 위로">' +
+    '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V4M5 11l7-7 7 7"/></svg></button>';
+  var el = document.createElement('div');
+  el.className = 'fab';
+  el.innerHTML = h;
+  document.body.appendChild(el);
+  // 아래쪽 탭 메뉴가 있는 화면(접수 화면)에서는 메뉴 위로 올려 둠
+  if (document.querySelector('.tabs')) document.body.classList.add('has-tabs');
+  el.querySelector('.fab-top').onclick = function () { window.scrollTo({ top: 0, behavior: 'smooth' }); };
+}
+addFloatButtons();
+
 /* ---------- 뒤로 가기 (휴대폰 뒤로 버튼 = 바로 전 단계) ---------- */
 // 창(입력 창·선택 창·확인 창)을 열 때마다 방문 기록을 하나 쌓아, 뒤로 가기를 누르면 그 창만 닫힘
 // 창이 없을 때는 history.state.tab 으로 이전 탭에 돌아감 (페이지가 window.onPopTab 을 정의)
