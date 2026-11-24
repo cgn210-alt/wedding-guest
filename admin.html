@@ -288,9 +288,20 @@ function startAdmin() {
     if (!_settingsLoaded) { fillSettings(); _settingsLoaded = true; }
   });
   listen(ROOT + '/data/groups', function (s) { groups = s.val() || {}; renderGroupList(); });
-  listen(ROOT + '/data/guests', function (s) { guests = s.val() || {}; renderGroupList(); renderTop(); renderCards(); });
+  listen(ROOT + '/data/guests', function (s) { guests = s.val() || {}; cleanOldRsvpCopies(); renderGroupList(); renderTop(); renderCards(); });
   listen(ROOT + '/allowed', function (s) { allowed = s.val() || {}; renderAllowed(); });
   listen(ROOT + '/rsvp', function (s) { rsvps = s.val() || {}; renderCards(); });
+}
+
+// 예전 '해제'는 카드 회신을 그 사람 기록으로 옮겨 남겨 두었음. 지금은 해제하면 회신도 지우므로,
+// 그렇게 남아 있던 회신을 지워 참석 회신 집계에서 빠지게 함 (링크가 없는 사람만, 직접 입력한 회신은 그대로)
+var OLD_RSVP_COPY = '초대 카드 회신(링크 해제 전)';
+function cleanOldRsvpCopies() {
+  var up = {};
+  guestArr().forEach(function (g) {
+    if (!g.cardToken && g.rsvp && g.rsvp.by === OLD_RSVP_COPY) up[g.id + '/rsvp'] = null;
+  });
+  if (Object.keys(up).length) _db.ref(ROOT + '/data/guests').update(up).catch(function (e) { console.warn('rsvp cleanup', e); });
 }
 
 function renderTop() {
