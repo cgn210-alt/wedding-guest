@@ -239,5 +239,7 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13.5px; }
 .fab-b { width: 48px; height: 48px; border-radius: 50%; border: 0; padding: 0; display: flex; align-items: center; justify-content: center;
   background: #fff; color: #2b2724; box-shadow: 0 4px 14px rgba(0,0,0,.16); text-decoration: none; font-weight: 700; font-size: 15px; letter-spacing: .5px; cursor: pointer; transition: transform .12s; }
 .fab-b:active { transform: scale(.93); }
+.fab-11 { background: linear-gradient(135deg, #e0708f, #f0957a); color: #fff; box-shadow: 0 4px 14px rgba(224,112,143,.38); }
+.fab-top { background: linear-gradient(135deg, #a98bd6, #d89fd0); color: #fff; box-shadow: 0 4px 14px rgba(169,139,214,.38); }
 .fab { transition: transform .3s ease, opacity .3s ease; }
 .fab.fab-hide { transform: translateX(calc(100% + 24px)); opacity: 0; pointer-events: none; }
