@@ -573,6 +573,8 @@ var _cardSel = {};           // 체크한 사람 id
 var _cardShown = [];         // 지금 목록에 보이는 사람 id
 var CARD_STATES = [['all', '전체'], ['nolink', '링크 없음'], ['unsent', '안 보낸 분'], ['sent', '보낸 분']];
 function cardState(g) { return !g.cardToken ? 'nolink' : (g.cardSentAt ? 'sent' : 'unsent'); }
+// '안 보낸 분'은 링크가 없는 분까지 포함 (아직 보내지 않은 모든 분)
+function inCardState(g, st) { return st === 'all' || (st === 'unsent' ? !g.cardSentAt : cardState(g) === st); }
 function setCardGroup(id) { _cardGroup = id; renderCards(); }
 // 그룹 고르기 창 (아래에서 올라옴, PC에서는 가운데)
 var _cardGroupOpts = [];
@@ -616,11 +618,11 @@ function renderCards() {
   $('cardGroupBtn').innerHTML = '<span>' + esc(curG[1]) + ' · ' + curG[2] + '명</span>' +
     '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>';
   $('cardStateChips').innerHTML = CARD_STATES.map(function (x) {
-    var n = x[0] === 'all' ? inGroup.length : inGroup.filter(function (g) { return cardState(g) === x[0]; }).length;
+    var n = x[0] === 'all' ? inGroup.length : inGroup.filter(function (g) { return inCardState(g, x[0]); }).length;
     return '<button class="' + (_cardState === x[0] ? 'on' : '') + '" onclick="setCardState(\'' + x[0] + '\')"><span>' + x[1] + '</span><b>' + n + '</b></button>';
   }).join('');
   var arr = inGroup.filter(function (g) {
-    if (_cardState !== 'all' && cardState(g) !== _cardState) return false;
+    if (_cardState !== 'all' && !inCardState(g, _cardState)) return false;
     return !q || String(g.name).replace(/\s/g, '').indexOf(q) >= 0;
   }).sort(byName);
   _cardShown = arr.map(function (g) { return g.id; });
