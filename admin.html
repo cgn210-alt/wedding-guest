@@ -100,6 +100,28 @@
   /* 초대 확인 카드: 버튼이 많은 줄은 버튼을 이름 아래로 */
   .rows li.wrap { flex-wrap: wrap; row-gap: 6px; }
   .rows li.wrap .acts { width: 100%; justify-content: flex-end; flex-wrap: wrap; }
+  .ad-wrap { padding-bottom: 110px; }   /* 맨 아래 줄이 떠 있는 버튼에 가리지 않게 */
+  /* 그룹 고르기: 누르면 아래에서 올라오는 창 */
+  .gpick { display: flex; align-items: center; justify-content: space-between; gap: 8px; text-align: left; background: #fff; cursor: pointer; font-weight: 700; }
+  .gpick span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .gpick svg { flex-shrink: 0; color: var(--sub); }
+  .gs-back { position: fixed; inset: 0; z-index: 60; background: rgba(40,20,30,0); display: flex; align-items: flex-end; justify-content: center; transition: background .25s ease; }
+  .gs-back.on { background: rgba(40,20,30,.45); }
+  .gs { background: #fff; width: 100%; max-width: 480px; max-height: 72vh; display: flex; flex-direction: column; border-radius: 20px 20px 0 0;
+    padding: 8px 0 calc(10px + env(safe-area-inset-bottom)); transform: translateY(100%); transition: transform .28s cubic-bezier(.2,.8,.2,1); box-shadow: 0 -8px 30px rgba(60,30,50,.18); }
+  .gs-back.on .gs { transform: none; }
+  .gs .handle { width: 40px; height: 5px; border-radius: 999px; background: var(--line); margin: 2px auto 10px; }
+  .gs .ttl { font-size: 17px; font-weight: 800; padding: 0 20px 10px; border-bottom: 1px solid var(--line); }
+  .gs ul { list-style: none; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  .gs li button { width: 100%; display: flex; align-items: center; gap: 10px; padding: 14px 20px; border: 0; background: none; font-size: 15px; font-weight: 700; color: var(--text); text-align: left; cursor: pointer; }
+  .gs li button:active, .gs li button:hover { background: var(--gray-soft); }
+  .gs li button .n { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .gs li button .c { font-size: 12px; color: var(--sub); background: var(--gray-soft); border-radius: 999px; padding: 3px 9px; }
+  .gs li button .ok { width: 22px; height: 22px; flex-shrink: 0; color: transparent; }
+  .gs li button.on { color: var(--accent); }
+  .gs li button.on .c { background: var(--accent-soft); color: var(--accent); }
+  .gs li button.on .ok { color: var(--accent); }
+  @media (min-width: 600px) { .gs-back { align-items: center; } .gs { border-radius: 20px; max-height: 70vh; } .gs .handle { display: none; } .gs .ttl { padding-top: 10px; } }
   /* 초대 확인 카드 목록: 버튼 크기·간격을 맞춰 정렬 (휴대폰은 이름 아래 4칸, PC는 한 줄) */
   #cardList .acts { gap: 6px; }
   #cardList .acts .b { border: 1px solid var(--line); background: #fff; color: var(--text); border-radius: 8px; padding: 0 10px; height: 34px; font-size: 13px; display: inline-flex; align-items: center; justify-content: center; }
@@ -166,7 +188,7 @@
   .foot .meinfo { font-size: 12.5px; color: var(--sub); margin-bottom: 10px; }
 </style>
 </head>
-<body data-title-suffix=" 관리자">
+<body data-title-suffix=" 관리자" data-fab-idle>
 
 <!-- 설정 필요 -->
 <div id="setupScreen" class="center-box hidden">
@@ -284,7 +306,7 @@
       <div class="sec-bd" style="padding-bottom:6px">
         <div class="cfind">
           <input id="cardSearch" class="inp" type="search" placeholder="이름으로 찾기" oninput="renderCards()" autocomplete="off">
-          <select id="cardGroupSel" class="inp" onchange="setCardGroup(this.value)" aria-label="그룹 고르기"></select>
+          <button type="button" id="cardGroupBtn" class="inp gpick" onclick="openGroupPicker()" aria-label="그룹 고르기"></button>
         </div>
         <div class="fseg" id="cardStateChips"></div>
         <div class="selbar">
@@ -323,7 +345,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-<script src="common.js?v=12"></script>
+<script src="common.js?v=13"></script>
 <script>
 var allowed = {};
 var _settingsLoaded = false;
@@ -552,6 +574,31 @@ var _cardShown = [];         // 지금 목록에 보이는 사람 id
 var CARD_STATES = [['all', '전체'], ['nolink', '링크 없음'], ['unsent', '안 보낸 분'], ['sent', '보낸 분']];
 function cardState(g) { return !g.cardToken ? 'nolink' : (g.cardSentAt ? 'sent' : 'unsent'); }
 function setCardGroup(id) { _cardGroup = id; renderCards(); }
+// 그룹 고르기 창 (아래에서 올라옴, PC에서는 가운데)
+var _cardGroupOpts = [];
+function openGroupPicker() {
+  closeGroupPicker(true);
+  var back = document.createElement('div');
+  back.id = 'groupSheet'; back.className = 'gs-back';
+  var CHECK = '<svg class="ok" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+  back.innerHTML = '<div class="gs" role="dialog" aria-label="그룹 고르기"><div class="handle"></div><div class="ttl">그룹 고르기</div><ul>' +
+    _cardGroupOpts.map(function (x, i) {
+      return '<li><button type="button" class="' + (x[0] === _cardGroup ? 'on' : '') + '" data-i="' + i + '"><span class="n">' + esc(x[1]) + '</span><span class="c">' + x[2] + '명</span>' + CHECK + '</button></li>';
+    }).join('') + '</ul></div>';
+  back.addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-i]');
+    if (b) { setCardGroup(_cardGroupOpts[+b.getAttribute('data-i')][0]); closeGroupPicker(); }
+    else if (e.target === back) closeGroupPicker();
+  });
+  document.body.appendChild(back);
+  requestAnimationFrame(function () { requestAnimationFrame(function () { back.classList.add('on'); }); });
+}
+function closeGroupPicker(now) {
+  var back = $('groupSheet'); if (!back) return;
+  if (now) { back.remove(); return; }
+  back.classList.remove('on');
+  setTimeout(function () { back.remove(); }, 280);
+}
 function setCardState(v) { _cardState = v; renderCards(); }
 function renderCards() {
   var q = $('cardSearch').value.trim().replace(/\s/g, '');
@@ -562,11 +609,12 @@ function renderCards() {
   $('cardCount').textContent = '링크 ' + made + ' · 보냄 ' + sent;
   if (_cardGroup && !groups[_cardGroup]) _cardGroup = '';
   var inGroup = all.filter(function (g) { return !_cardGroup || g.groupId === _cardGroup; });
-  $('cardGroupSel').innerHTML = [['', '전체 그룹', all.length]].concat(sortedGroups().map(function (gr) {
+  _cardGroupOpts = [['', '전체 그룹', all.length]].concat(sortedGroups().map(function (gr) {
     return [gr.id, gr.name, all.filter(function (g) { return g.groupId === gr.id; }).length];
-  })).map(function (x) {
-    return '<option value="' + x[0] + '"' + (_cardGroup === x[0] ? ' selected' : '') + '>' + esc(x[1]) + ' (' + x[2] + ')</option>';
-  }).join('');
+  }));
+  var curG = _cardGroupOpts.filter(function (x) { return x[0] === _cardGroup; })[0] || _cardGroupOpts[0];
+  $('cardGroupBtn').innerHTML = '<span>' + esc(curG[1]) + ' · ' + curG[2] + '명</span>' +
+    '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>';
   $('cardStateChips').innerHTML = CARD_STATES.map(function (x) {
     var n = x[0] === 'all' ? inGroup.length : inGroup.filter(function (g) { return cardState(g) === x[0]; }).length;
     return '<button class="' + (_cardState === x[0] ? 'on' : '') + '" onclick="setCardState(\'' + x[0] + '\')"><span>' + x[1] + '</span><b>' + n + '</b></button>';

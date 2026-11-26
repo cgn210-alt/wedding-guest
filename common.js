@@ -165,6 +165,14 @@ function addFloatButtons() {
   }
   setShown(!scrollable());
   window.addEventListener('scroll', update, { passive: true });
+  // 관리자 화면(data-fab-idle): 스크롤을 멈추면 2초 뒤 버튼이 들어가서 목록의 버튼을 가리지 않음
+  if (document.body.hasAttribute('data-fab-idle')) {
+    var idleT = null;
+    window.addEventListener('scroll', function () {
+      clearTimeout(idleT);
+      idleT = setTimeout(function () { if (scrollable()) setShown(false); }, 2000);
+    }, { passive: true });
+  }
   window.addEventListener('resize', update);
   if (window.ResizeObserver) new ResizeObserver(update).observe(document.body);
 }
