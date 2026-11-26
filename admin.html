@@ -117,7 +117,7 @@
   }
   @media (max-width: 380px) { .selbar { flex-wrap: wrap; } }
   /* 초대 확인 카드: 거르기 단추·여러 명 선택 */
-  .fchips { display: flex; gap: 6px; overflow-x: auto; margin-top: 10px; padding-bottom: 2px; -webkit-overflow-scrolling: touch; }
+  .fchips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
   .fchips button { flex-shrink: 0; border: 1px solid var(--line); background: #fff; color: var(--sub); border-radius: 999px; padding: 6px 12px; font-size: 13px; font-weight: 700; white-space: nowrap; }
   .fchips button.on { background: var(--accent); border-color: var(--accent); color: #fff; }
   .selbar { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 12px; }
