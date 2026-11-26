@@ -100,6 +100,30 @@
   /* 초대 확인 카드: 버튼이 많은 줄은 버튼을 이름 아래로 */
   .rows li.wrap { flex-wrap: wrap; row-gap: 6px; }
   .rows li.wrap .acts { width: 100%; justify-content: flex-end; flex-wrap: wrap; }
+  /* 초대 확인 카드: 거르기 단추·여러 명 선택 */
+  .fchips { display: flex; gap: 6px; overflow-x: auto; margin-top: 10px; padding-bottom: 2px; -webkit-overflow-scrolling: touch; }
+  .fchips button { flex-shrink: 0; border: 1px solid var(--line); background: #fff; color: var(--sub); border-radius: 999px; padding: 6px 12px; font-size: 13px; font-weight: 700; white-space: nowrap; }
+  .fchips button.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .selbar { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 12px; }
+  .selall { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 700; }
+  .selall input, .rows .ck { width: 20px; height: 20px; accent-color: var(--accent); flex-shrink: 0; }
+  .selcnt { font-size: 13px; color: var(--sub); font-weight: 700; white-space: nowrap; }
+  .selacts { display: flex; gap: 8px; margin-top: 10px; }
+  .selacts .b { flex: 1; }
+  .selacts .b:disabled, .sq .b:disabled { opacity: .45; }
+  .sent-tag { color: var(--ok); font-weight: 700; }
+  /* 차례로 보내기 창 */
+  .sq-back { position: fixed; inset: 0; background: rgba(40,20,30,.45); z-index: 60; display: flex; align-items: flex-end; justify-content: center; }
+  .sq { background: #fff; width: 100%; max-width: 480px; border-radius: 20px 20px 0 0; padding: 18px 18px calc(18px + env(safe-area-inset-bottom)); }
+  .sq .pos { font-size: 13px; color: var(--sub); font-weight: 700; }
+  .sq .bar { height: 6px; background: var(--gray-soft); border-radius: 999px; margin: 8px 0 14px; overflow: hidden; }
+  .sq .bar i { display: block; height: 100%; background: var(--accent); }
+  .sq .who { font-size: 22px; font-weight: 800; }
+  .sq .who small { font-size: 13px; color: var(--sub); font-weight: 600; margin-left: 6px; }
+  .sq .st { font-size: 13px; margin-top: 4px; color: var(--sub); min-height: 18px; }
+  .sq .b { width: 100%; margin-top: 10px; padding: 13px; font-size: 15px; }
+  .sq .row2 { display: flex; gap: 8px; }
+  .sq .row2 .b { flex: 1; }
   .b.kakao { background: #fee500; border-color: #fee500; color: #191919; padding: 7px 12px; font-size: 13px; }
   .b.kakao:hover { background: #f5dc00; }
   /* 그룹 순서: 왼쪽 손잡이를 누른 채 끌어서 옮김 */
@@ -233,12 +257,19 @@
     <section class="sec">
       <div class="sec-hd">
         <h2>초대 확인 카드 <span class="cnt" id="cardCount">0명</span></h2>
-        <p>원하는 분만 골라 링크를 만듭니다. 링크 복사를 눌러 카카오톡에 붙여 보내면, 하객은 이름과 QR이 있는 카드를 받습니다. 접수대에서 QR을 찍으면 그분의 접수 창이 열립니다.</p>
+        <p>그룹과 상태로 거른 뒤 여러 분을 골라 링크를 한 번에 만들고, '차례로 보내기'로 한 분씩 카카오톡으로 보냅니다. 하객은 이름과 QR이 있는 카드를 받고, 접수대에서 QR을 찍으면 그분의 접수 창이 열립니다.</p>
       </div>
       <div class="sec-bd" style="padding-bottom:6px">
-        <div class="add-row">
-          <input id="cardSearch" class="inp" type="search" placeholder="이름으로 찾기" oninput="renderCards()" autocomplete="off">
-          <button class="b" id="cardOnlyBtn" onclick="_cardOnly = !_cardOnly; renderCards()">만든 분만</button>
+        <input id="cardSearch" class="inp" type="search" placeholder="이름으로 찾기" oninput="renderCards()" autocomplete="off">
+        <div class="fchips" id="cardGroupChips"></div>
+        <div class="fchips" id="cardStateChips"></div>
+        <div class="selbar">
+          <label class="selall"><input type="checkbox" id="cardAll" onchange="selectAllCards(this.checked)"> <span id="cardAllLbl">모두 선택</span></label>
+          <span class="selcnt" id="cardSelCnt"></span>
+        </div>
+        <div class="selacts">
+          <button class="b" id="cardMakeBtn" onclick="makeSelectedCards()">링크 만들기</button>
+          <button class="b pri" id="cardSendBtn" onclick="startSendQueue()">차례로 보내기</button>
         </div>
       </div>
       <ul class="rows" id="cardList"></ul>
@@ -490,29 +521,153 @@ function removeAllowed(k) {
 
 /* ---------- 내보내기 ---------- */
 /* ---------- 초대 확인 카드 ---------- */
-var _cardOnly = false;
+var _cardGroup = '';        // 거르기: 그룹 id ('' = 전체)
+var _cardState = 'all';      // 거르기: all 전체 / nolink 링크 없음 / unsent 안 보낸 분 / sent 보낸 분
+var _cardSel = {};           // 체크한 사람 id
+var _cardShown = [];         // 지금 목록에 보이는 사람 id
+var CARD_STATES = [['all', '전체'], ['nolink', '링크 없음'], ['unsent', '안 보낸 분'], ['sent', '보낸 분']];
+function cardState(g) { return !g.cardToken ? 'nolink' : (g.cardSentAt ? 'sent' : 'unsent'); }
+function setCardGroup(id) { _cardGroup = id; renderCards(); }
+function setCardState(v) { _cardState = v; renderCards(); }
 function renderCards() {
   var q = $('cardSearch').value.trim().replace(/\s/g, '');
-  var all = guestArr().filter(function (g) { return g.invited; });
+  // 청첩장 받은 분 + (청첩장 표시를 뺐어도) 링크가 있는 분
+  var all = guestArr().filter(function (g) { return g.invited || g.cardToken; });
   var made = all.filter(function (g) { return g.cardToken; }).length;
-  $('cardCount').textContent = made + '명';
-  $('cardOnlyBtn').classList.toggle('pri', _cardOnly);
-  var arr = all.filter(function (g) {
-    if (_cardOnly && !g.cardToken) return false;
+  var sent = all.filter(function (g) { return g.cardToken && g.cardSentAt; }).length;
+  $('cardCount').textContent = '링크 ' + made + ' · 보냄 ' + sent;
+  if (_cardGroup && !groups[_cardGroup]) _cardGroup = '';
+  var inGroup = all.filter(function (g) { return !_cardGroup || g.groupId === _cardGroup; });
+  $('cardGroupChips').innerHTML = [['', '전체 그룹']].concat(sortedGroups().map(function (gr) { return [gr.id, gr.name]; })).map(function (x) {
+    return '<button class="' + (_cardGroup === x[0] ? 'on' : '') + '" onclick="setCardGroup(\'' + x[0] + '\')">' + esc(x[1]) + '</button>';
+  }).join('');
+  $('cardStateChips').innerHTML = CARD_STATES.map(function (x) {
+    var n = x[0] === 'all' ? inGroup.length : inGroup.filter(function (g) { return cardState(g) === x[0]; }).length;
+    return '<button class="' + (_cardState === x[0] ? 'on' : '') + '" onclick="setCardState(\'' + x[0] + '\')">' + x[1] + ' ' + n + '</button>';
+  }).join('');
+  var arr = inGroup.filter(function (g) {
+    if (_cardState !== 'all' && cardState(g) !== _cardState) return false;
     return !q || String(g.name).replace(/\s/g, '').indexOf(q) >= 0;
-  }).sort(function (a, b) { return (b.cardToken ? 1 : 0) - (a.cardToken ? 1 : 0) || byName(a, b); });
-  var shown = arr.slice(0, 40);
-  $('cardList').innerHTML = shown.length ? shown.map(function (g) {
+  }).sort(byName);
+  _cardShown = arr.map(function (g) { return g.id; });
+  Object.keys(_cardSel).forEach(function (id) { if (!guests[id]) delete _cardSel[id]; });   // 지워진 분은 선택에서 뺌
+  $('cardList').innerHTML = arr.length ? arr.map(function (g) {
     var acts = g.cardToken
-      ? '<button class="b kakao" onclick="shareCard(\'' + g.id + '\')">카톡 보내기</button>' +
+      ? '<button class="b kakao" onclick="sendOne(\'' + g.id + '\')">카톡 보내기</button>' +
         '<button class="b ghost" onclick="copyCard(\'' + g.id + '\')">복사</button>' +
         '<button class="b ghost" onclick="window.open(cardUrl(\'' + g.cardToken + '\'))">보기</button>' +
         '<button class="b ghost del" onclick="revokeCard(\'' + g.id + '\')">해제</button>'
       : '<button class="b ghost" onclick="makeCard(\'' + g.id + '\')">링크 만들기</button>';
-    return '<li' + (g.cardToken ? ' class="wrap"' : '') + '><div class="main"><div class="nm">' + esc(g.name) + '</div><div class="sb">' + esc(groupName(g.groupId)) +
-      (g.cardToken ? ' · 링크 있음' : '') + (rsvpOf(g) ? ' · ' + rsvpText(rsvpOf(g)) + ' 회신' : (g.cardToken ? ' · 회신 전' : '')) + (g.visited ? ' · 접수됨' : '') + '</div></div><div class="acts">' + acts + '</div></li>';
-  }).join('') + (arr.length > shown.length ? '<li><div class="main sb">' + (arr.length - shown.length) + '명 더 있습니다. 이름으로 찾아 주세요.</div></li>' : '')
-    : '<li><div class="main sb">' + (all.length ? '해당하는 분이 없습니다.' : '청첩장 받은 분이 아직 없습니다.') + '</div></li>';
+    var st = !g.cardToken ? ' · 링크 없음' : (g.cardSentAt ? ' · <span class="sent-tag">보냄</span>' : ' · 안 보냄');
+    return '<li' + (g.cardToken ? ' class="wrap"' : '') + '><input type="checkbox" class="ck" ' + (_cardSel[g.id] ? 'checked ' : '') + 'onchange="toggleCardSel(\'' + g.id + '\', this.checked)">' +
+      '<div class="main"><div class="nm">' + esc(g.name) + '</div><div class="sb">' + esc(groupName(g.groupId)) + st +
+      (rsvpOf(g) ? ' · ' + rsvpText(rsvpOf(g)) + ' 회신' : '') + (g.visited ? ' · 접수됨' : '') + '</div></div><div class="acts">' + acts + '</div></li>';
+  }).join('') : '<li><div class="main sb">' + (all.length ? '해당하는 분이 없습니다.' : '청첩장 받은 분이 아직 없습니다.') + '</div></li>';
+  updateCardSelBar();
+}
+function toggleCardSel(id, on) { if (on) _cardSel[id] = true; else delete _cardSel[id]; updateCardSelBar(); }
+function selectAllCards(on) {
+  _cardShown.forEach(function (id) { if (on) _cardSel[id] = true; else delete _cardSel[id]; });
+  renderCards();
+}
+function clearCardSel() { _cardSel = {}; renderCards(); }
+function selectedCardIds() {
+  return Object.keys(_cardSel).filter(function (id) { return guests[id]; }).sort(function (a, b) { return byName(guests[a], guests[b]); });
+}
+function updateCardSelBar() {
+  var sel = selectedCardIds(), n = sel.length;
+  var shownSel = _cardShown.filter(function (id) { return _cardSel[id]; }).length;
+  $('cardAll').checked = _cardShown.length > 0 && shownSel === _cardShown.length;
+  $('cardAll').indeterminate = shownSel > 0 && shownSel < _cardShown.length;
+  $('cardAllLbl').textContent = '보이는 ' + _cardShown.length + '명 모두 선택';
+  $('cardSelCnt').innerHTML = n ? n + '명 선택 · <a href="javascript:void 0" onclick="clearCardSel()" style="color:var(--sub)">해제</a>' : '';
+  var noLink = sel.filter(function (id) { return !guests[id].cardToken; }).length;
+  $('cardMakeBtn').disabled = !noLink;
+  $('cardMakeBtn').textContent = noLink ? '링크 만들기 ' + noLink + '명' : '링크 만들기';
+  $('cardSendBtn').disabled = !n;
+  $('cardSendBtn').textContent = n ? '차례로 보내기 ' + n + '명' : '차례로 보내기';
+}
+// 고른 분 중 링크가 없는 분의 링크를 한 번에 만듦
+function makeCardsFor(ids) {
+  var up = {}, n = 0;
+  ids.forEach(function (id) {
+    var g = guests[id]; if (!g || g.cardToken) return;
+    var tok = newCardToken();
+    up['data/guests/' + id + '/cardToken'] = tok;
+    up['cards/' + tok] = { name: g.name, at: firebase.database.ServerValue.TIMESTAMP };
+    n++;
+  });
+  if (!n) return Promise.resolve(0);
+  return _db.ref(ROOT).update(up).then(function () { return n; });
+}
+function makeSelectedCards() {
+  makeCardsFor(selectedCardIds())
+    .then(function (n) { if (n) toast(n + '명 링크를 만들었습니다'); })
+    .catch(function (e) { notice('만들지 못했습니다', e.message + '\nFirebase 보안 규칙(cards)을 게시했는지 확인해 주세요.'); });
+}
+// 보낸 것으로 표시 (카톡 보내기·복사를 누른 때)
+function markSent(id) {
+  var g = guests[id]; if (!g || !g.cardToken) return;
+  _db.ref(ROOT + '/data/guests/' + id).update({ cardSentAt: firebase.database.ServerValue.TIMESTAMP, cardSentBy: _me.email })
+    .catch(function (e) { console.warn('markSent', e); });
+}
+function sendOne(id) {
+  var canSend = (window.Kakao && Kakao.isInitialized()) || !!navigator.share;   // 보낼 수 없는 환경(카카오톡 안 브라우저 등)에서는 보냄 표시를 하지 않음
+  shareCard(id);
+  if (canSend) markSent(id);
+}
+
+/* ---------- 차례로 보내기: 고른 분을 한 분씩 보여 주고 '카톡 보내기' → '다음 분'을 반복 ---------- */
+var _sq = null;   // { ids, i, done: { id: true } }
+function startSendQueue() {
+  var ids = selectedCardIds(); if (!ids.length) return;
+  var need = ids.filter(function (id) { return !guests[id].cardToken; }).length;
+  var go = need
+    ? ask('링크 먼저 만들기', '고른 ' + ids.length + '명 중 ' + need + '명은 아직 링크가 없습니다.\n링크를 만든 뒤 차례로 보낼까요?', '만들고 보내기').then(function (ok) {
+        return ok ? makeCardsFor(ids).then(function () { return true; }) : false;
+      })
+    : Promise.resolve(true);
+  go.then(function (ok) {
+    if (!ok) return;
+    _sq = { ids: ids, i: 0, done: {} };
+    renderSendQueue();
+  }).catch(function (e) { notice('만들지 못했습니다', e.message); });
+}
+function renderSendQueue() {
+  var box = $('sendQueue');
+  if (!_sq) { if (box) box.remove(); return; }
+  if (!box) { box = document.createElement('div'); box.id = 'sendQueue'; box.className = 'sq-back'; document.body.appendChild(box); }
+  var total = _sq.ids.length, sentN = Object.keys(_sq.done).length;
+  if (_sq.i >= total) {
+    box.innerHTML = '<div class="sq"><div class="who">끝까지 왔습니다</div><div class="st">' + total + '명 중 ' + sentN + '명에게 보냈습니다.</div>' +
+      '<div class="row2"><button class="b" onclick="sqMove(-1)">이전 분</button><button class="b pri" onclick="endSendQueue(true)">닫기</button></div></div>';
+    return;
+  }
+  var id = _sq.ids[_sq.i], g = guests[id];
+  if (!g || !g.cardToken) { _sq.i++; renderSendQueue(); return; }   // 그사이 지워졌거나 해제된 분은 건너뜀
+  var isDone = !!_sq.done[id];
+  box.innerHTML = '<div class="sq"><div class="pos">' + (_sq.i + 1) + ' / ' + total + '</div>' +
+    '<div class="bar"><i style="width:' + Math.round(_sq.i / total * 100) + '%"></i></div>' +
+    '<div class="who">' + esc(g.name) + '<small>' + esc(groupName(g.groupId)) + '</small></div>' +
+    '<div class="st">' + (isDone ? '<span class="sent-tag">보냈습니다. 다음 분으로 넘어가세요.</span>'
+      : (g.cardSentAt ? '전에 보낸 적이 있는 분입니다.' : '카톡 보내기를 누르고 받을 분을 고르세요.')) + '</div>' +
+    '<button class="b kakao" onclick="sqSend()">' + (isDone ? '한 번 더 보내기' : '카톡 보내기') + '</button>' +
+    '<div class="row2"><button class="b" onclick="sqMove(-1)"' + (_sq.i === 0 ? ' disabled' : '') + '>이전 분</button>' +
+    '<button class="b' + (isDone ? ' pri' : '') + '" onclick="sqMove(1)">' + (isDone ? '다음 분' : '건너뛰기') + '</button></div>' +
+    '<button class="b ghost" onclick="endSendQueue()">그만 보내기</button></div>';
+}
+function sqSend() {
+  var id = _sq.ids[_sq.i];
+  sendOne(id);
+  _sq.done[id] = true;
+  renderSendQueue();
+}
+function sqMove(d) { _sq.i = Math.max(0, _sq.i + d); renderSendQueue(); }
+function endSendQueue(finished) {
+  var sentN = _sq ? Object.keys(_sq.done).length : 0;
+  if (finished) _sq.ids.forEach(function (id) { delete _cardSel[id]; });   // 끝까지 보낸 뒤에는 선택을 비움
+  _sq = null; renderSendQueue(); renderCards();
+  if (sentN) toast(sentN + '명에게 보냈습니다');
 }
 function makeCard(id) {
   var g = guests[id]; if (!g || g.cardToken) return;
@@ -531,6 +686,8 @@ function revokeCard(id) {
     if (!ok) return;
     var up = {};
     up['data/guests/' + id + '/cardToken'] = null;
+    up['data/guests/' + id + '/cardSentAt'] = null;
+    up['data/guests/' + id + '/cardSentBy'] = null;
     up['cards/' + g.cardToken] = null;
     // 카드 회신과 이 분 기록에 남은 회신을 모두 지움 → 집계에서 빠짐
     if (rsvps[g.cardToken]) up['rsvp/' + g.cardToken] = null;
@@ -640,7 +797,7 @@ function copyCard(id) {
   var g = guests[id]; if (!g || !g.cardToken) return;
   var text = cardMessage(g);
   copyText(text).then(function (ok) {
-    if (ok) toast('복사했습니다. 카카오톡에 붙여 넣으세요');
+    if (ok) { toast('복사했습니다. 카카오톡에 붙여 넣으세요'); markSent(id); }
     else notice('직접 복사해 주세요', text);
   });
 }
