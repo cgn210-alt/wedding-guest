@@ -117,9 +117,15 @@
   }
   @media (max-width: 380px) { .selbar { flex-wrap: wrap; } }
   /* 초대 확인 카드: 거르기 단추·여러 명 선택 */
-  .fchips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
-  .fchips button { flex-shrink: 0; border: 1px solid var(--line); background: #fff; color: var(--sub); border-radius: 999px; padding: 6px 12px; font-size: 13px; font-weight: 700; white-space: nowrap; }
-  .fchips button.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .cfind { display: grid; grid-template-columns: 1fr; gap: 8px; }
+  .cfind select { width: 100%; min-width: 0; }
+  @media (min-width: 600px) { .cfind { grid-template-columns: 1fr 1fr; } }
+  .fseg { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin-top: 10px; }
+  .fseg button { border: 1px solid var(--line); background: #fff; color: var(--sub); border-radius: 10px; padding: 7px 4px; font-size: 12.5px; font-weight: 700; line-height: 1.25; display: flex; flex-direction: column; align-items: center; min-width: 0; }
+  .fseg button span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+  .fseg button b { font-size: 15px; color: var(--text); }
+  .fseg button.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .fseg button.on b { color: #fff; }
   .selbar { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 12px; }
   .selall { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 700; }
   .selall input, .rows .ck { width: 20px; height: 20px; accent-color: var(--accent); flex-shrink: 0; }
@@ -276,9 +282,11 @@
         <p>그룹과 상태로 거른 뒤 여러 분을 골라 링크를 한 번에 만들고, '차례로 보내기'로 한 분씩 카카오톡으로 보냅니다. 하객은 이름과 QR이 있는 카드를 받고, 접수대에서 QR을 찍으면 그분의 접수 창이 열립니다.</p>
       </div>
       <div class="sec-bd" style="padding-bottom:6px">
-        <input id="cardSearch" class="inp" type="search" placeholder="이름으로 찾기" oninput="renderCards()" autocomplete="off">
-        <div class="fchips" id="cardGroupChips"></div>
-        <div class="fchips" id="cardStateChips"></div>
+        <div class="cfind">
+          <input id="cardSearch" class="inp" type="search" placeholder="이름으로 찾기" oninput="renderCards()" autocomplete="off">
+          <select id="cardGroupSel" class="inp" onchange="setCardGroup(this.value)" aria-label="그룹 고르기"></select>
+        </div>
+        <div class="fseg" id="cardStateChips"></div>
         <div class="selbar">
           <label class="selall"><input type="checkbox" id="cardAll" onchange="selectAllCards(this.checked)"> <span id="cardAllLbl">모두 선택</span></label>
           <span class="selcnt" id="cardSelCnt"></span>
@@ -554,12 +562,14 @@ function renderCards() {
   $('cardCount').textContent = '링크 ' + made + ' · 보냄 ' + sent;
   if (_cardGroup && !groups[_cardGroup]) _cardGroup = '';
   var inGroup = all.filter(function (g) { return !_cardGroup || g.groupId === _cardGroup; });
-  $('cardGroupChips').innerHTML = [['', '전체 그룹']].concat(sortedGroups().map(function (gr) { return [gr.id, gr.name]; })).map(function (x) {
-    return '<button class="' + (_cardGroup === x[0] ? 'on' : '') + '" onclick="setCardGroup(\'' + x[0] + '\')">' + esc(x[1]) + '</button>';
+  $('cardGroupSel').innerHTML = [['', '전체 그룹', all.length]].concat(sortedGroups().map(function (gr) {
+    return [gr.id, gr.name, all.filter(function (g) { return g.groupId === gr.id; }).length];
+  })).map(function (x) {
+    return '<option value="' + x[0] + '"' + (_cardGroup === x[0] ? ' selected' : '') + '>' + esc(x[1]) + ' (' + x[2] + ')</option>';
   }).join('');
   $('cardStateChips').innerHTML = CARD_STATES.map(function (x) {
     var n = x[0] === 'all' ? inGroup.length : inGroup.filter(function (g) { return cardState(g) === x[0]; }).length;
-    return '<button class="' + (_cardState === x[0] ? 'on' : '') + '" onclick="setCardState(\'' + x[0] + '\')">' + x[1] + ' ' + n + '</button>';
+    return '<button class="' + (_cardState === x[0] ? 'on' : '') + '" onclick="setCardState(\'' + x[0] + '\')"><span>' + x[1] + '</span><b>' + n + '</b></button>';
   }).join('');
   var arr = inGroup.filter(function (g) {
     if (_cardState !== 'all' && cardState(g) !== _cardState) return false;
