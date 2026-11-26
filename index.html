@@ -63,6 +63,7 @@
       <ul class="list" id="recvResults" style="margin-top:8px"></ul>
       <button class="btn block primary" style="margin-top:10px" onclick="openScan()">QR로 초대 확인</button>
       <button class="btn block dashed" style="margin-top:8px" onclick="openWalkIn()">+ 명단에 없는 방문자 접수</button>
+      <button class="btn block dashed" style="margin-top:8px" onclick="openBankOnly()">+ 계좌로만 보내신 분 기록</button>
     </div>
     <div class="card">
       <h2>최근 접수 <span class="muted" id="recentCount"></span></h2>
@@ -139,6 +140,12 @@
       <h2>계좌별 누적액 <span class="muted">받은 곳 기준</span></h2>
       <div class="tbl-wrap"><table class="tbl" id="acctTable"></table></div>
       <div class="muted" id="acctNote" style="margin-top:8px"></div>
+    </div>
+    <div class="card">
+      <h2>계좌로만 보내신 분 <span class="muted">식장 미방문</span></h2>
+      <div class="muted" id="bankOnlySum" style="margin:-4px 0 10px"></div>
+      <div class="tbl-wrap"><table class="tbl" id="bankOnlyTable"></table></div>
+      <ul class="list" id="bankOnlyList" style="margin-top:10px"></ul>
     </div>
     <div class="card">
       <h2>그룹별</h2>
@@ -634,6 +641,28 @@ function openWalkIn() {
   if (!$('mName').value) setTimeout(function () { $('mName').focus(); }, 50);
 }
 
+// 식장에 오지 않고 계좌로만 보내신 분 기록: '식장 방문'을 끈 상태로 계좌 선택부터 시작
+// 검색칸 이름과 똑같은 분이 명단에 한 명 있으면 그분 기록을 열고, 없으면 새로 등록
+function openBankOnly() {
+  var q = $('recvSearch').value.trim();
+  var same = q ? guestArr().filter(function (g) { return g.name === q; }) : [];
+  if (same.length === 1) {
+    openGuest(same[0].id);
+    if (!same[0].visited) {
+      $('mVisited').checked = false; $('mTickets').value = 0; syncVisitFields();
+      $('mSave').textContent = '저장';
+    }
+  } else {
+    openWalkIn();
+    $('mVisited').checked = false; $('mTickets').value = 0; syncVisitFields();
+    $('mSave').textContent = '저장';
+    if (same.length > 1) toast('같은 이름이 ' + same.length + '명 있습니다. 명단 탭에서 해당 분을 눌러 기록해 주세요');
+  }
+  $('mTitle').textContent = '계좌 입금 기록 (식장 미방문)';
+  // 계좌 고르는 칸이 바로 보이도록
+  setTimeout(function () { $('mAcct').scrollIntoView({ block: 'center', behavior: 'smooth' }); }, 80);
+}
+
 function openModal() {
   renderQuick(); syncVisitFields(); syncBankFields();
   $('modalBg').classList.remove('hidden');
@@ -890,6 +919,33 @@ function renderStats() {
   ah += '<tr class="sum"><td>합계</td><td>' + (t.cashCount + t.bankCount) + '</td><td>' + num(t.gift) + '</td><td>' + (t.gift ? '100%' : '-') + '</td></tr>';
   $('acctTable').innerHTML = ah;
   $('acctNote').textContent = '계좌 입금 ' + t.bankCount + '건 중 식장에 오지 않고 계좌로만 보낸 분 ' + t.bankOnly + '명';
+
+  // 계좌로만 보내신 분 (식장 미방문 + 계좌 입금): 계좌별 인원·금액과 명단
+  var bo = guestArr().filter(function (g) { return !g.visited && bankGift(g) > 0; });
+  var boAcct = {}, boSum = 0;
+  ACCOUNTS.forEach(function (a) { boAcct[a.id] = { n: 0, sum: 0 }; });
+  bo.forEach(function (g) { var r = boAcct[g.bankAcct] || (boAcct[g.bankAcct] = { n: 0, sum: 0 }); r.n++; r.sum += bankGift(g); boSum += bankGift(g); });
+  $('bankOnlySum').textContent = bo.length + '명 · 합계 ' + won(boSum);
+  var bh = '<tr><th>받은 곳</th><th>인원</th><th>금액<small>원</small></th></tr>';
+  Object.keys(boAcct).forEach(function (id) {
+    var r = boAcct[id], a = acctById(id);
+    bh += '<tr><td>' + esc(acctLabel(id)) + (a ? '<small>…' + esc(a.tail) + '</small>' : '') + '</td><td>' + r.n + '</td><td>' + num(r.sum) + '</td></tr>';
+  });
+  bh += '<tr class="sum"><td>합계</td><td>' + bo.length + '</td><td>' + num(boSum) + '</td></tr>';
+  $('bankOnlyTable').innerHTML = bh;
+  // 계좌 순서 → 이름 순으로 정렬, 누르면 수정 창
+  var acctOrder = ACCOUNTS.map(function (a) { return a.id; });
+  bo.sort(function (a, b) {
+    var ia = acctOrder.indexOf(a.bankAcct), ib = acctOrder.indexOf(b.bankAcct);
+    return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib) || byName(a, b);
+  });
+  $('bankOnlyList').innerHTML = bo.length ? bo.map(function (g) {
+    var d = g.bankAt ? new Date(g.bankAt) : null;
+    return '<li onclick="openGuest(\'' + g.id + '\')"><div class="av">' + esc(String(g.name).charAt(0)) + '</div>' +
+      '<div class="body"><div class="nm">' + esc(g.name) + ' <span class="badge b-bank">' + esc(acctLabel(g.bankAcct)) + '</span></div>' +
+      '<div class="meta">' + esc(groupName(g.groupId)) + (g.memo ? ' · ' + esc(g.memo) : '') + (d ? ' · ' + (d.getMonth() + 1) + '/' + d.getDate() + ' 기록' : '') + '</div></div>' +
+      '<div class="amt">' + manwon(bankGift(g)) + '</div></li>';
+  }).join('') : '<div class="empty">계좌로만 보내신 분이 아직 없습니다.</div>';
 
   var rows = {}, order = sortedGroups().map(function (g) { return g.id; });
   function row(id) { return rows[id] || (rows[id] = { inv: 0, invV: 0, walk: 0, gift: 0, tickets: 0 }); }
