@@ -70,8 +70,12 @@
 
 <script src="firebase-config.js?v=2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<!-- 로그인 확인용(이 기기에서 접수 앱에 로그인되어 있으면 회신 버튼 잠금) -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script>
-// 토큰으로 이름만 읽어 카드와 QR(이 카드 주소)을 그림. 배경 꽃 장식은 아래 common.js 가 그림 (로그인 코드는 쓰지 않음)
+// 토큰으로 이름만 읽어 카드와 QR(이 카드 주소)을 그림. 배경 꽃 장식은 아래 common.js 가 그림
+// 로그인은 하지 않고, 이 기기에 접수 앱 로그인이 남아 있는지만 확인함 (보낸 사람의 회신 잠금용)
 // 모바일 청첩장 (청첩장 페이지의 미리보기 정보와 같게)
 var INVITATION = {
   url: 'https://chanhyeok-kyuri-1219-ny5w2hx0.netlify.app/',
@@ -89,11 +93,27 @@ var INVITATION = {
   if (!/^[a-z0-9]{12,40}$/.test(token) || typeof FIREBASE_CONFIG === 'undefined' || !FIREBASE_CONFIG.databaseURL) { fail(); return; }
   // 참석 회신 (wedding/rsvp/{토큰}). 읽을 수 없으면(보안 규칙 rsvp 게시 전) 회신 칸만 숨기고 카드는 그대로 보여 줌
   var RSVP_URL = FIREBASE_CONFIG.databaseURL + '/wedding/rsvp/' + token + '.json';
-  var rsvp = null, pick = '', cnt = 1, editing = false;
+  var rsvp = null, pick = '', cnt = 1, editing = false, guestName = '';
   var rsvpLoad = fetch(RSVP_URL).then(function (r) { return r.ok ? r.json() : false; }).catch(function () { return false; });
+  // 보낸 사람(관리자·접수 담당자)이 잘못 회신하지 않도록 회신 버튼을 잠금
+  //  ② 관리자 페이지 [보기]로 연 카드(&preview=1)  ① 이 기기에서 접수 앱에 로그인되어 있을 때
+  var previewMode = new URLSearchParams(location.search).get('preview') === '1';
+  var staffMode = false;
+  if (window.firebase && FIREBASE_CONFIG.apiKey) {
+    try {
+      firebase.initializeApp(FIREBASE_CONFIG);
+      firebase.auth().onAuthStateChanged(function (u) { staffMode = !!u; renderRsvp(); });
+    } catch (e) {}
+  }
   function renderRsvp(err) {
     var el = document.getElementById('rsvp');
     if (!el) return;
+    if (previewMode || staffMode) {
+      el.innerHTML = '<div class="q">참석 회신 <span style="font-size:12.5px;font-weight:700;color:var(--accent)">' + (previewMode ? '관리자 미리보기' : '로그인된 기기') + '</span></div>' +
+        '<div class="s">' + (rsvp ? '현재 회신: ' + (rsvp.answer === 'yes' ? '참석 ' + (Number(rsvp.count) || 1) + '명' : '불참') : '아직 회신이 없습니다.') +
+        '<br>회신은 초대받으신 분만 하실 수 있어 이 화면에서는 버튼이 눌리지 않습니다.</div>';
+      return;
+    }
     if (rsvp && !editing) {
       el.innerHTML = '<div class="done">' + (rsvp.answer === 'yes'
           ? '참석으로 알려 주셨습니다 · ' + (Number(rsvp.count) || 1) + '명<br><span style="font-weight:600;font-size:14px;color:var(--sub)">감사합니다. 예식 당일 뵙겠습니다.</span>'
@@ -111,19 +131,26 @@ var INVITATION = {
     Array.prototype.forEach.call(el.querySelectorAll('[data-a]'), function (b) { b.onclick = function () { pick = b.getAttribute('data-a'); renderRsvp(); }; });
     Array.prototype.forEach.call(el.querySelectorAll('[data-d]'), function (b) { b.onclick = function () { cnt = Math.min(10, Math.max(1, cnt + Number(b.getAttribute('data-d')))); renderRsvp(); }; });
     var send = document.getElementById('rsvpSend');
+    // ③ 보내기 전에 본인인지 한 번 더 확인 (카드를 보낸 분이 실수로 누르는 것을 막음)
     if (send) send.onclick = function () {
+      if (previewMode || staffMode) return;
+      ask('본인 확인', guestName + ' 님 본인이 맞으신가요?\n참석 회신은 초대받으신 분만 해 주세요.', '네, 본인입니다')
+        .then(function (ok) { if (ok) sendRsvp(); });
+    };
+    function sendRsvp() {
       send.disabled = true; send.textContent = '보내는 중…';
       var data = { answer: pick, count: pick === 'yes' ? cnt : 0, at: { '.sv': 'timestamp' } };
       fetch(RSVP_URL, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) })
         .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
         .then(function (saved) { rsvp = saved; editing = false; renderRsvp(); })
         .catch(function () { renderRsvp('보내지 못했습니다. 잠시 후 다시 눌러 주세요.'); });
-    };
+    }
   }
   fetch(FIREBASE_CONFIG.databaseURL + '/wedding/cards/' + token + '.json')
     .then(function (r) { return r.ok ? r.json() : null; })
     .then(function (c) {
       if (!c || !c.name) { fail(); return; }
+      guestName = c.name;
       body.innerHTML =
         '<h1>' + esc(c.name) + '<small>님</small></h1>' +
         '<div class="ok">축복의 자리에 모십니다</div>' +

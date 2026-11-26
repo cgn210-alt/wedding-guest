@@ -631,7 +631,7 @@ function renderCards() {
     var acts = g.cardToken
       ? '<button class="b kakao" onclick="sendOne(\'' + g.id + '\')">카톡 보내기</button>' +
         '<button class="b ghost" onclick="copyCard(\'' + g.id + '\')">복사</button>' +
-        '<button class="b ghost" onclick="window.open(cardUrl(\'' + g.cardToken + '\'))">보기</button>' +
+        '<button class="b ghost" onclick="window.open(cardUrl(\'' + g.cardToken + '\') + \'&preview=1\')">보기</button>' +   // 미리보기: 회신 버튼 잠금
         '<button class="b ghost del" onclick="revokeCard(\'' + g.id + '\')">해제</button>'
       : '<button class="b ghost" onclick="makeCard(\'' + g.id + '\')">링크 만들기</button>';
     var st = !g.cardToken ? ' · 링크 없음' : (g.cardSentAt ? ' · <span class="sent-tag">보냄</span>' : ' · 안 보냄');
